@@ -1,0 +1,102 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.mytool</groupId>
+  <artifactId>Project-Tool</artifactId>
+  <version>1.0.3</version>
+
+  <properties>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+  </properties>
+
+  <build>
+    <plugins>
+      <!-- Fat Jar plugin -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.3.0</version>
+        <configuration>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+          <archive>
+            <manifest>
+              <mainClass>JsonToFile2</mainClass> <!-- 請改為你的主類名 -->
+            </manifest>
+          </archive>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <!-- Jackson -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.15.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>2.15.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>2.15.2</version>
+    </dependency>
+	  
+	  <!-- JUnit 4 -->
+	  <dependency>
+		  <groupId>junit</groupId>
+		  <artifactId>junit</artifactId>
+		  <version>4.13.2</version>
+		  <scope>test</scope>
+	  </dependency>
+	  <!-- Lombok -->
+	  <dependency>
+		  <groupId>org.projectlombok</groupId>
+		  <artifactId>lombok</artifactId>
+		  <version>1.18.30</version>
+		  <scope>provided</scope>
+	  </dependency>
+	  
+	  <dependency>
+		  <groupId>org.hibernate.validator</groupId>
+		  <artifactId>hibernate-validator</artifactId>
+		  <version>6.2.5.Final</version>
+	  </dependency>
+	  <dependency>
+		  <groupId>org.glassfish</groupId>
+		  <artifactId>jakarta.el</artifactId>
+		  <version>3.0.4</version>
+	  </dependency>
+	  
+	  <dependency>
+		  <groupId>org.apache.commons</groupId>
+		  <artifactId>commons-lang3</artifactId>
+		  <version>3.13.0</version>
+	  </dependency>
+	  
+	  <dependency>
+		  <groupId>org.apache.commons</groupId>
+		  <artifactId>commons-collections4</artifactId>
+		  <version>4.4</version>
+	  </dependency>
+  </dependencies>
+</project>
