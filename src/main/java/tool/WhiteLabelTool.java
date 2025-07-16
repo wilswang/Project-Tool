@@ -1,6 +1,9 @@
+package tool;
+
 import dto.ApiWalletInfo;
 import dto.GroupInfo;
 import dto.WhiteLabel;
+import util.TemplateEngine;
 
 import java.io.*;
 import java.nio.file.*;
@@ -15,10 +18,10 @@ import java.util.Objects;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-public class JsonToFile2 {
+public class WhiteLabelTool {
     private static final String PROJECT_PREFIX = "SACRIC-";
     private static final String OUTPUT_PATH = "./result/";
-    private static final String INPUT_FILE_NAME = "temp.json";
+    private static final String INPUT_FILE_NAME = "whiteLabel.json";
 	private static final String CONST_JS = "WebSiteType.{$webSiteName} = {\n" + "\t\"value\": {$webSiteValue},\n" + "\t\"shortCode\": \"{$webSiteName}\",\n"
 		+ "\t\"displayName\": \"{$webSiteName}\"\n" + "};\n";
 	private static final String TS_FINANCIAL = "\n@HttpUpdate\n" + "public static boolean ENABLE_TS_FINANCIAL_{$webSiteName} = %s;\n\n";

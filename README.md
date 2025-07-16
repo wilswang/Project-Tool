@@ -1,7 +1,7 @@
 # Project Tool 工具說明
 
 這是一個多功能 Java 工具集，包含兩個主要功能：
-- **工具 A (White Label Generator)**: 根據 `temp.json` 的輸入資料，自動產出 SQL 檔案與對應的 Java/JS 程式碼
+- **工具 A (White Label Generator)**: 根據 `whiteLabel.json` 的輸入資料，自動產出 SQL 檔案與對應的 Java/JS 程式碼
 - **工具 B (Domain Checker)**: 根據 `checkDomain.json` 的設定，批次檢查網域連線狀態
 
 ---
@@ -26,7 +26,7 @@ project-tool.bat B    # 工具 B: Domain Checker
 
 ## 📥 工具 A: temp.json 檔案格式 (White Label Generator)
 
-請提供一個 JSON 檔案作為輸入，檔名預設為 `temp.json`。
+請提供一個 JSON 檔案作為輸入，檔名預設為 `whiteLabel.json`。
 
 ### ✅ JSON 格式說明（WhiteLabel 結構）
 
@@ -142,7 +142,7 @@ chmod +x project-tool.sh    # 賦予執行權限（首次執行）
 1. **建置專案**: 執行 `mvn package` 產生 JAR 檔案
 2. **複製檔案**: 將 `Project-Tool-1.0.4-jar-with-dependencies.jar` 從 `target/` 複製到 `src/main/resources/`
 3. **準備設定檔**: 將對應的 JSON 設定檔放置於 `src/main/resources/` 目錄下
-   - **工具 A**: `temp.json` 檔案
+   - **工具 A**: `whiteLabel.json` 檔案
    - **工具 B**: `checkDomain.json` 檔案
 4. **Mac/Linux**: 賦予腳本執行權限 `chmod +x project-tool.sh`
 

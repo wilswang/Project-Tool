@@ -1,5 +1,5 @@
-import tool.JsonToFile2;
 import tool.UrlChecker;
+import tool.WhiteLabelTool;
 
 public class MainSelector {
 	public static void main(String[] args) {
@@ -12,7 +12,7 @@ public class MainSelector {
 		
 		switch (option.toUpperCase()) {
 			case "A":
-				JsonToFile2.main(new String[]{}); // 可傳遞額外參數
+				WhiteLabelTool.main(new String[]{}); // 可傳遞額外參數
 				break;
 			case "B":
 				UrlChecker.main(new String[]{});

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Java-based White Label Inserter tool that processes JSON configuration files to generate SQL scripts and Java/JS code for white label site configurations. The tool supports both regular white label sites and API-based white label configurations.
+This is a Java-based tool that processes JSON configuration files to generate SQL scripts and Java/JS code for white label site configurations. The tool supports both regular white label sites and API-based white label configurations.
 
 ## Build and Development Commands
 
@@ -30,15 +30,30 @@ mvn test -Dtest=WhiteLabelTest#testLombokGetter_isSqlOnly
 ```
 
 ### Running the Application
+
+**Preferred method (using shell scripts):**
 ```bash
-# Run the main application (after building)
+# From project root, navigate to scripts location
+cd src/main/resources
+
+# Windows
+project-tool.bat A    # White Label Generator
+project-tool.bat B    # Domain Checker
+
+# Mac/Linux (make executable first time)
+chmod +x project-tool.sh
+./project-tool.sh A   # White Label Generator  
+./project-tool.sh B   # Domain Checker
+```
+
+**Alternative method (direct execution):**
+```bash
+# Run from target/ directory after mvn package
 java -jar target/Project-Tool-1.0.4-jar-with-dependencies.jar A
 
-# Run JsonToFile2 (Option A)
-java MainSelector A
-
-# Run UrlChecker (Option B)  
-java MainSelector B
+# Run directly with classpath
+java MainSelector A   # White Label Generator
+java MainSelector B   # Domain Checker
 ```
 
 ## Architecture Overview
@@ -46,31 +61,34 @@ java MainSelector B
 ### Core Components
 
 1. **MainSelector** - Entry point that routes to different tools based on command line arguments
-   - Option A: JsonToFile2 (White Label Generator)
+   - Option A: WhiteLabelTool (White Label Generator)
    - Option B: UrlChecker (Domain Checker)
 
-2. **JsonToFile2** - Main white label processing engine
-   - Reads `temp.json` configuration file
+2. **WhiteLabelTool** - Main white label processing engine
+   - Reads `whiteLabel.json` configuration file
    - Generates SQL scripts for DB-01 and DB-41 environments
    - Creates Java enum and JavaScript constant files
    - Handles both regular and API white label configurations
-   - Supports template-based code generation
+   - Uses template-based code generation via TemplateEngine
 
 3. **UrlChecker** - Domain connectivity checker
    - Reads `checkDomain.json` configuration
    - Tests HTTP/HTTPS connectivity to domain lists
    - Configurable timeouts and subdomain support
+   - Uses DomainCheckInfo DTO for structured configuration
 
-4. **TemplateEngine** - Template processing utility
+4. **TemplateEngine** (util package) - Template processing utility
    - Handles placeholder replacement in template files
    - Supports file-based template processing
    - Manages output file generation
+   - Uses `{$variable}` placeholder syntax
 
 ### Data Model (dto package)
 
-- **WhiteLabel** - Main configuration object with validation
+- **WhiteLabel** - Main configuration object with comprehensive validation
 - **ApiWalletInfo** - API wallet specific configuration
 - **GroupInfo** - Group-specific IP and domain settings
+- **DomainCheckInfo** - Domain checker configuration with timeout validation
 
 ### Key Dependencies
 
@@ -82,18 +100,19 @@ java MainSelector B
 
 ## Input Files
 
-### temp.json (White Label Configuration)
+### whiteLabel.json (White Label Configuration)
 Primary input file for white label generation containing:
 - Site configuration (name, value, host)
 - API wallet information (certificates, groups)
 - Group settings (IPs, domains, backup configurations)
+- Boolean flags for sqlOnly and apiWhiteLabel modes
 
 ### checkDomain.json (Domain Checker Configuration)
 Configuration for domain connectivity testing:
 - Domain list to check
 - Protocol settings (HTTP/HTTPS)
 - Subdomain configuration
-- Timeout settings
+- Timeout settings (15s-2min range enforced)
 
 ## Output Structure
 
@@ -105,16 +124,50 @@ Generated files are placed in `./result/` directory:
 ## Template System
 
 The tool uses template files located in `./template/` directory for:
-- Database schema generation
+- Database schema generation (NewSite-DB-01/41-template.txt)
+- API wallet templates (ApiWallet-DB-01/41-template.txt)
 - Java enum generation
 - JavaScript constant generation
 - Domain type configurations
 
-Templates use `{$variable}` placeholders for dynamic content replacement.
+Templates use `{$variable}` placeholders for dynamic content replacement via TemplateEngine.
+
+## Shell Scripts Setup
+
+The project includes convenience scripts in `src/main/resources/`:
+- `project-tool.bat` (Windows)
+- `project-tool.sh` (Mac/Linux)
+
+**Setup requirements:**
+1. Run `mvn package` to generate JAR file
+2. Copy `Project-Tool-1.0.4-jar-with-dependencies.jar` from `target/` to `src/main/resources/`
+3. Place input JSON files in `src/main/resources/`
+4. Make scripts executable: `chmod +x project-tool.sh` (Mac/Linux)
+
+**Script features:**
+- Auto-checks for JAR file existence
+- Auto-creates `result/` output directory
+- Handles directory navigation automatically
 
 ## Validation
 
-The WhiteLabel class includes comprehensive validation:
+### WhiteLabel Configuration
 - Bean validation annotations (@NotBlank, @NotNull, @Min)
 - Custom conditional validation logic
-- Supports different validation rules for API vs regular white labels
+- API mode requires apiWalletInfo when apiWhiteLabel=true
+- New group creation requires groupInfo when newGroup=true
+
+### DomainCheckInfo Configuration  
+- Required domainList validation
+- Timeout constraints (15000-120000ms)
+- Built-in validate() method with descriptive error messages
+- Exits gracefully on validation failures
+
+## Development Workflow
+
+1. **Make changes** to Java source files
+2. **Test changes** with `mvn test`
+3. **Build project** with `mvn package`
+4. **Copy JAR** to `src/main/resources/` if using shell scripts
+5. **Prepare JSON** input files in correct location
+6. **Run tool** using preferred execution method
