@@ -6,7 +6,7 @@
 
   <groupId>com.mytool</groupId>
   <artifactId>Project-Tool</artifactId>
-  <version>1.0.3</version>
+  <version>1.0.4</version>
 
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
@@ -26,7 +26,7 @@
           </descriptorRefs>
           <archive>
             <manifest>
-              <mainClass>JsonToFile2</mainClass> <!-- 請改為你的主類名 -->
+              <mainClass>MainSelector</mainClass> <!-- 請改為你的主類名 -->
             </manifest>
           </archive>
         </configuration>

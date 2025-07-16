@@ -1,0 +1,53 @@
+{
+	"projectName": "Project Tool",
+	"description": "Java-based tool for making routine thing or repeatable thing more easily",
+	"model": "claude-sonnet-4-20250514",
+	"context": {
+		"includePatterns": [
+			"src/main/java/**/*.java",
+			"src/test/java/**/*.java",
+			"template/**/*.txt",
+			"*.json",
+			"*.md",
+			"pom.xml"
+		],
+		"excludePatterns": [
+			".idea/**",
+			"lib/**",
+			"target/**",
+			"src/main/resources/**",
+			"result/**",
+			"**/jquery*",
+			"**/*.css",
+			"**/*.min.js",
+			"**/hls.js",
+			"**/*.log",
+			"**/*.class",
+			"**/trace.js",
+			"**/trace2.js",
+			"**/swagger-ui-bundle.js",
+			"**/swagger-ui-standalone-preset.js",
+			"**/collector.js",
+			"**/jbl.js",
+			"**/*.properties",
+			"**/*.yml",
+			"**/*.yaml",
+			"**/*.xml",
+			"**/*.json",
+			"**/*.txt",
+			"**/*.sql",
+			"**/*.log"
+		],
+		"maxFileSize": 512000
+	},
+	"preferences": {
+		"codeStyle": "explicit",
+		"verbosity": "normal",
+		"language": "zh-TW",
+		"safetyRules": {
+			"prohibitedCommands": ["rm -rf", "rm -rf *", "sudo rm -rf", "del /s", "rmdir /s"],
+			"description": "禁止使用危險的刪除指令"
+		}
+	},
+	"systemPrompt": "你是一個專精於 Java 開發的助手，專門協助工具的開發和維護。此工具使用 Maven 建置，主要功能包括：\n1. 協助處理routine或是可重複的工作，例如使用模板引擎生成程式碼以及驗證輸入資料的完整性\n\n請遵循以下原則：\n1. 使用 Lombok 減少 boilerplate 程式碼\n2. 使用 Jackson 進行 JSON 處理\n3. 使用 Hibernate Validator 進行資料驗證\n4. 遵循 Java 命名規範和編碼標準\n5. 確保程式碼的安全性和可維護性\n6. 提供清楚的中文解釋\n7. 重視模板系統的靈活性和擴展性",
+}
