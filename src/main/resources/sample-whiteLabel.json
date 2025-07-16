@@ -1,0 +1,33 @@
+{
+   "sqlOnly":false,
+   "ticketNo":"770",
+   "webSiteName":"TEST_CAM12345",
+   "webSiteValue":99999,
+   "apiWhiteLabel":true,
+   "host":"",
+   "apiWalletInfo":{
+      "cert":"nDhn9L3bRUarirvY",
+      "newGroup":false,
+      "group":"Q99",
+      "groupInfo":{
+         "privateIpSetId":"privateIpSetId",
+         "privateIp":[
+            "pra48ozwin365.xyz",
+            "pra48ozwin365.space"
+         ],
+         "bkIpSetId":[
+            "bkIpSetId1",
+            "bkIpSetId2"
+         ],
+         "apiInfoBkIpSetId":"apiInfoBkIpSetId",
+         "backup":[
+            "ozvvin365.live",
+            "ozwin365.space",
+            "ozvvin365.space",
+            "o2win365.space",
+            "o2win365.live",
+            "o2vvin365.live"
+         ]
+      }
+   }
+}

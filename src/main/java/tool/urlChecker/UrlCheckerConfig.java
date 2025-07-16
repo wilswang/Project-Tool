@@ -1,4 +1,4 @@
-package dto;
+package tool.urlChecker;
 
 import lombok.Data;
 
@@ -15,7 +15,7 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 @Data
-public class DomainCheckInfo {
+public class UrlCheckerConfig {
 	public String subdomain;
 	
 	public boolean isHttps;
@@ -35,10 +35,10 @@ public class DomainCheckInfo {
 	public void validate() {
 		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
 		Validator validator = factory.getValidator();
-		Set<ConstraintViolation<DomainCheckInfo>> violations = validator.validate(this);
+		Set<ConstraintViolation<UrlCheckerConfig>> violations = validator.validate(this);
 		
 		if (!violations.isEmpty()) {
-			for (ConstraintViolation<DomainCheckInfo> violation : violations) {
+			for (ConstraintViolation<UrlCheckerConfig> violation : violations) {
 				System.err.println("❌ 驗證錯誤: " + violation.getPropertyPath() + " - " + violation.getMessage());
 			}
 			System.exit(1);

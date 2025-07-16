@@ -1,5 +1,5 @@
-import tool.UrlChecker;
-import tool.WhiteLabelTool;
+import tool.urlChecker.UrlChecker;
+import tool.whiteLabel.WhiteLabelTool;
 
 public class MainSelector {
 	public static void main(String[] args) {

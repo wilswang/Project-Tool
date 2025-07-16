@@ -2,57 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# Role Definition
-
-You are to act as a **senior and experienced Java engineer**. Your responsibilities include:
-
-- For any **ambiguous, unclear, or insufficiently defined requirements**, you **must not proceed**. Instead, clearly raise questions and wait for clarification.
-- Before starting to implement any task, **list the preparation steps** or **subtasks** required, and only proceed after the task is approved or confirmed through discussion.
-- You should be methodical, thoughtful, and consider not only correctness, but also **stability** and **scalability** of the code.
-
-# Rules and Constraints
-
-1. All development must use the **Spring Boot** framework as the base architecture.
-2. Always **prefer using existing dependencies** and methods already present in the codebase. If a new library or dependency needs to be added to `pom.xml`, you **must ask for approval first**.
-3. You **must not write or suggest any code** that will **delete files or data** unless explicitly instructed to do so. If deletion is truly necessary, **seek confirmation first**.
-4. Every piece of code should be designed with **robustness**, **maintainability**, and **expandability** in mind.
-5. For every new tool or module, you **must provide a corresponding unit test** to verify its functionality and correctness.
-
----
-
-# Purpose
-
-The purpose of this project is to assist in completing routine or highly repetitive work efficiently and reliably.
-
-- Developed in Java
-- Executed via `.bat` or `.sh` scripts depending on OS
-- Emphasis on clarity, maintainability, stability, and extensibility
-- External file inputs (e.g., JSON) must be validated using Hibernate Validator
-- All tools should have unit tests verifying functional correctness
-- Any unclear or challenging requirement must be discussed before proceeding
-
----
-
-# Development Principles
-
-- Java as the main language
-- Spring Boot as the core framework
-- Consistent naming, clean structure, and layered architecture
-- Configuration-driven design where possible
-- Error messages and logs should be human-readable and meaningful
-
----
-
-# Collaboration Guidelines
-
-- If something is unclear, DO NOT assume. Ask questions first.
-- All requirements must be broken down into clear subtasks and reviewed before implementation.
-- Testing is mandatory. Tools without test coverage are considered incomplete.
-- Avoid unnecessary abstraction; prioritize clarity.
-- Follow existing patterns and style in the codebase.
-
----
-
 ## Project Overview
 
 This is a Java-based tool that processes JSON configuration files to generate SQL scripts and Java/JS code for white label site configurations. The tool supports both regular white label sites and API-based white label configurations.
@@ -112,27 +61,27 @@ java MainSelector B   # Domain Checker
 ### Core Components
 
 1. **MainSelector** - Entry point that routes to different tools based on command line arguments
-    - Option A: WhiteLabelTool (White Label Generator)
-    - Option B: UrlChecker (Domain Checker)
+   - Option A: WhiteLabelTool (White Label Generator)
+   - Option B: UrlChecker (Domain Checker)
 
 2. **WhiteLabelTool** - Main white label processing engine
-    - Reads `whiteLabelConfig.json` configuration file
-    - Generates SQL scripts for DB-01 and DB-41 environments
-    - Creates Java enum and JavaScript constant files
-    - Handles both regular and API white label configurations
-    - Uses template-based code generation via TemplateEngine
+   - Reads `whiteLabelConfig.json` configuration file
+   - Generates SQL scripts for DB-01 and DB-41 environments
+   - Creates Java enum and JavaScript constant files
+   - Handles both regular and API white label configurations
+   - Uses template-based code generation via TemplateEngine
 
 3. **UrlChecker** - Domain connectivity checker
-    - Reads `checkDomain.json` configuration
-    - Tests HTTP/HTTPS connectivity to domain lists
-    - Configurable timeouts and subdomain support
-    - Uses DomainCheckInfo DTO for structured configuration
+   - Reads `checkDomain.json` configuration
+   - Tests HTTP/HTTPS connectivity to domain lists
+   - Configurable timeouts and subdomain support
+   - Uses DomainCheckInfo DTO for structured configuration
 
 4. **TemplateEngine** (util package) - Template processing utility
-    - Handles placeholder replacement in template files
-    - Supports file-based template processing
-    - Manages output file generation
-    - Uses `{$variable}` placeholder syntax
+   - Handles placeholder replacement in template files
+   - Supports file-based template processing
+   - Manages output file generation
+   - Uses `{$variable}` placeholder syntax
 
 ### Data Model (dto package)
 
@@ -208,7 +157,7 @@ The project includes convenience scripts in `src/main/resources/`:
 - API mode requires apiWalletInfo when apiWhiteLabel=true
 - New group creation requires groupInfo when newGroup=true
 
-### DomainCheckInfo Configuration
+### DomainCheckInfo Configuration  
 - Required domainList validation
 - Timeout constraints (15000-120000ms)
 - Built-in validate() method with descriptive error messages
@@ -226,25 +175,21 @@ The project includes convenience scripts in `src/main/resources/`:
 # Project Structure
 
 ```
-/java/tools/
+/tools/
   /<tool-name>/
     - ToolMain.java            # Entry point
     - ToolConfig.java          # JSON config class with @Valid annotations
     - ToolService.java         # Core logic
     - ToolUtils.java           # Optional helpers
+    - ToolMainTest.java        # JUnit test class
 
-/java/util/
-  - somethiingUtils.java    # public use method can be a independent util class
-  
 /scripts/
-  - project-tool.sh                # Unix execution script
-  - project-tool.bat               # Windows execution script
+  - run-tool.sh                # Unix execution script
+  - run-tool.bat               # Windows execution script
 
 /resources/
   - sample-config.json         # Example JSON config
-  
-/test/
-  - ToolMainTest.java        # JUnit test class
+  - schema.md                  # Description of config schema
 ```
 
 # Testing Guidelines

@@ -1,7 +1,6 @@
-package dto;
+package tool.whiteLabel;
 
 import lombok.Data;
-import lombok.Getter;
 
 import java.util.Set;
 
@@ -20,7 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Data
-public class WhiteLabel {
+public class WhiteLabelConfig {
 	
 	private boolean sqlOnly;
 	
@@ -45,10 +44,10 @@ public class WhiteLabel {
 	public void validate() {
 		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
 		Validator validator = factory.getValidator();
-		Set<ConstraintViolation<WhiteLabel>> violations = validator.validate(this);
+		Set<ConstraintViolation<WhiteLabelConfig>> violations = validator.validate(this);
 		
 		if (!violations.isEmpty()) {
-			for (ConstraintViolation<WhiteLabel> violation : violations) {
+			for (ConstraintViolation<WhiteLabelConfig> violation : violations) {
 				System.err.println("❌ 驗證錯誤: " + violation.getPropertyPath() + " - " + violation.getMessage());
 			}
 			System.exit(1);

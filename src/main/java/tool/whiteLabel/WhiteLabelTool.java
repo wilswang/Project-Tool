@@ -1,8 +1,5 @@
-package tool;
+package tool.whiteLabel;
 
-import dto.ApiWalletInfo;
-import dto.GroupInfo;
-import dto.WhiteLabel;
 import util.TemplateEngine;
 
 import java.io.*;
@@ -21,7 +18,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 public class WhiteLabelTool {
     private static final String PROJECT_PREFIX = "SACRIC-";
     private static final String OUTPUT_PATH = "./result/";
-    private static final String INPUT_FILE_NAME = "whiteLabel.json";
+    private static final String INPUT_FILE_NAME = "sample-whiteLabel.json";
 	private static final String CONST_JS = "WebSiteType.{$webSiteName} = {\n" + "\t\"value\": {$webSiteValue},\n" + "\t\"shortCode\": \"{$webSiteName}\",\n"
 		+ "\t\"displayName\": \"{$webSiteName}\"\n" + "};\n";
 	private static final String TS_FINANCIAL = "\n@HttpUpdate\n" + "public static boolean ENABLE_TS_FINANCIAL_{$webSiteName} = %s;\n\n";
@@ -50,22 +47,22 @@ public class WhiteLabelTool {
     public static void main(String[] args) {
         try {
             ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-            WhiteLabel whiteLabel = objectMapper.readValue(new File(INPUT_FILE_NAME), WhiteLabel.class);
-			System.out.println(whiteLabel.toString());
-			whiteLabel.validate();
+            WhiteLabelConfig whiteLabelConfig = objectMapper.readValue(new File(INPUT_FILE_NAME), WhiteLabelConfig.class);
+			System.out.println(whiteLabelConfig.toString());
+			whiteLabelConfig.validate();
 			String webSitePageKey = "WEB_SITE_PAGE";
 //            if (isValidInput(whiteLabel)) {
-                generateSqlFile(whiteLabel, true);
-                generateSqlFile(whiteLabel, false);
-                if (!whiteLabel.isSqlOnly()) {
-                    if (!whiteLabel.isApiWhiteLabel()) {
-                        generateFromTemplate(whiteLabel, "DOMAIN_TYPE", "../src/main/java/com/nv/commons/code/domain/", "DomainType.java");
+                generateSqlFile(whiteLabelConfig, true);
+                generateSqlFile(whiteLabelConfig, false);
+                if (!whiteLabelConfig.isSqlOnly()) {
+                    if (!whiteLabelConfig.isApiWhiteLabel()) {
+                        generateFromTemplate(whiteLabelConfig, "DOMAIN_TYPE", "../src/main/java/com/nv/commons/code/domain/", "DomainType.java");
 //                        generateFromTemplate(whiteLabel, "COUNTRY_TYPE", "../src/main/java/com/nv/commons/code/domain/", "CountryType.java");
                     } else {
 						webSitePageKey = "API_WALLET_WEB_SITE_PAGE";
 					}
-                    generateFromTemplate(whiteLabel, webSitePageKey, "../src/main/java/com/nv/commons/website/page/", "WebSitePage.java");
-					insertIntoJava(whiteLabel);
+                    generateFromTemplate(whiteLabelConfig, webSitePageKey, "../src/main/java/com/nv/commons/website/page/", "WebSitePage.java");
+					insertIntoJava(whiteLabelConfig);
 				}
 				//                generateOther(whiteLabel);
 //            }
@@ -74,16 +71,16 @@ public class WhiteLabelTool {
         }
     }
 
-    private static void generateSqlFile(WhiteLabel whiteLabel, boolean isDb01) {
+    private static void generateSqlFile(WhiteLabelConfig whiteLabelConfig, boolean isDb01) {
         String key = isDb01 ? "DB_01" : "DB_41";
-        if (whiteLabel.isApiWhiteLabel()) {
+        if (whiteLabelConfig.isApiWhiteLabel()) {
             key = isDb01 ? "API_DB_01" : "API_DB_41";
         }
 		String templateFile = TEMPLATE_PATHS.get(key);
         String suffix = isDb01 ? "-DB-01.sql" : "-DB-41.sql";
-        String outputFileName = OUTPUT_PATH + PROJECT_PREFIX + whiteLabel.getTicketNo() + suffix;
+        String outputFileName = OUTPUT_PATH + PROJECT_PREFIX + whiteLabelConfig.getTicketNo() + suffix;
 
-        Map<String, String> replacements = buildReplacements(whiteLabel);
+        Map<String, String> replacements = buildReplacements(whiteLabelConfig);
 		
 		String content;
 		String subContent = TemplateEngine.fillFile(templateFile, replacements);
@@ -91,11 +88,11 @@ public class WhiteLabelTool {
 			StringBuilder sb = new StringBuilder(subContent);
 			sb.append("\n");
 			// if sql is for DB01, need to check if new group or not
-			if (Objects.nonNull(whiteLabel.getApiWalletInfo()) && whiteLabel.getApiWalletInfo().isNewGroup()) {
-				sb.append(generateNewGroupSql(whiteLabel, false));
-				sb.append(generateNewGroupSql(whiteLabel, true));
-			} else if (whiteLabel.isApiWhiteLabel()) {
-				sb.append(generateUpdateGroupSql(whiteLabel));
+			if (Objects.nonNull(whiteLabelConfig.getApiWalletInfo()) && whiteLabelConfig.getApiWalletInfo().isNewGroup()) {
+				sb.append(generateNewGroupSql(whiteLabelConfig, false));
+				sb.append(generateNewGroupSql(whiteLabelConfig, true));
+			} else if (whiteLabelConfig.isApiWhiteLabel()) {
+				sb.append(generateUpdateGroupSql(whiteLabelConfig));
 			}
 			content = sb.toString();
 		} else {
@@ -105,43 +102,43 @@ public class WhiteLabelTool {
 		TemplateEngine.writeToFile(outputFileName, content);
     }
 
-    private static void generateFromTemplate(WhiteLabel whiteLabel, String templateKey, String outputPath, String suffix) {
+    private static void generateFromTemplate(WhiteLabelConfig whiteLabelConfig, String templateKey, String outputPath, String suffix) {
         String templateFile = TEMPLATE_PATHS.get(templateKey);
-        String className = convertSnakeToCamel(whiteLabel.getWebSiteName());
+        String className = convertSnakeToCamel(whiteLabelConfig.getWebSiteName());
         String outputFileName = outputPath + className + suffix;
 
-        Map<String, String> replacements = buildReplacements(whiteLabel);
+        Map<String, String> replacements = buildReplacements(whiteLabelConfig);
 		TemplateEngine.writeToFile(outputFileName, TemplateEngine.fillFile(templateFile, replacements));
     }
 	
-	private static Map<String, String> buildReplacements(WhiteLabel whiteLabel) {
+	private static Map<String, String> buildReplacements(WhiteLabelConfig whiteLabelConfig) {
 		Map<String, String> replacements = new HashMap<>();
-		replacements.put("{$webSiteName}", convertSnakeToCamel(whiteLabel.getWebSiteName()).toUpperCase());
-		replacements.put("{$webSiteValue}", whiteLabel.getWebSiteValue().toString());
-		replacements.put("{$className}", convertSnakeToCamel(whiteLabel.getWebSiteName()));
-		replacements.put("$enumName", whiteLabel.getHost().replace(".", "_").toUpperCase());
-		replacements.put("{$lowerCase}", convertSnakeToCamel(whiteLabel.getWebSiteName()).toLowerCase());
-		if (whiteLabel.isApiWhiteLabel()) {
-			replacements.put("$group", whiteLabel.getApiWalletInfo().getGroup());
-			replacements.put("$cert", whiteLabel.getApiWalletInfo().getCert());
+		replacements.put("{$webSiteName}", convertSnakeToCamel(whiteLabelConfig.getWebSiteName()).toUpperCase());
+		replacements.put("{$webSiteValue}", whiteLabelConfig.getWebSiteValue().toString());
+		replacements.put("{$className}", convertSnakeToCamel(whiteLabelConfig.getWebSiteName()));
+		replacements.put("$enumName", whiteLabelConfig.getHost().replace(".", "_").toUpperCase());
+		replacements.put("{$lowerCase}", convertSnakeToCamel(whiteLabelConfig.getWebSiteName()).toLowerCase());
+		if (whiteLabelConfig.isApiWhiteLabel()) {
+			replacements.put("$group", whiteLabelConfig.getApiWalletInfo().getGroup());
+			replacements.put("$cert", whiteLabelConfig.getApiWalletInfo().getCert());
 		} else {
-			replacements.put("$url", whiteLabel.getHost());
+			replacements.put("$url", whiteLabelConfig.getHost());
 		}
 		return replacements;
 	}
 	
-	private static void insertIntoJava(WhiteLabel whiteLabel) {
-		String templateKey = whiteLabel.isApiWhiteLabel() ? "API_OTHER" : "NEW_SITE_OTHER";
+	private static void insertIntoJava(WhiteLabelConfig whiteLabelConfig) {
+		String templateKey = whiteLabelConfig.isApiWhiteLabel() ? "API_OTHER" : "NEW_SITE_OTHER";
 		String templateFile = TEMPLATE_PATHS.get(templateKey);
-		String outputFileName = OUTPUT_PATH + PROJECT_PREFIX + whiteLabel.getTicketNo() + "-other.txt";
+		String outputFileName = OUTPUT_PATH + PROJECT_PREFIX + whiteLabelConfig.getTicketNo() + "-other.txt";
 		
-		Map<String, String> replacements = buildReplacements(whiteLabel);
+		Map<String, String> replacements = buildReplacements(whiteLabelConfig);
 		String content = TemplateEngine.fillFile(templateFile, replacements);
 		try {
 			//insert into WebSiteType.java
 			insertAtMarker(Paths.get("../src/main/java/com/nv/commons/code/WebSiteType.java"), "// insert New White Label", content, false);
 			//insert into Setting.java
-			String isEnable = whiteLabel.isApiWhiteLabel() ? "false" : "true";
+			String isEnable = whiteLabelConfig.isApiWhiteLabel() ? "false" : "true";
 			String setting1 = TemplateEngine.fill(String.format(TS_FINANCIAL, isEnable), replacements);
 			insertAtMarker(Paths.get("../src/main/java/com/nv/commons/model/Setting.java"), "// insert New White Label setting-1", setting1, false);
 			String setting2 = TemplateEngine.fill(String.format(ELECTION_FANCY_BET, isEnable), replacements);
@@ -205,24 +202,24 @@ public class WhiteLabelTool {
 		return line.substring(0, index);
 	}
 
-    private static void generateOther(WhiteLabel whiteLabel) {
-        String templateKey = whiteLabel.isApiWhiteLabel() ? "API_OTHER" : "NEW_SITE_OTHER";
+    private static void generateOther(WhiteLabelConfig whiteLabelConfig) {
+        String templateKey = whiteLabelConfig.isApiWhiteLabel() ? "API_OTHER" : "NEW_SITE_OTHER";
         String templateFile = TEMPLATE_PATHS.get(templateKey);
-        String outputFileName = OUTPUT_PATH + PROJECT_PREFIX + whiteLabel.getTicketNo() + "-other.txt";
+        String outputFileName = OUTPUT_PATH + PROJECT_PREFIX + whiteLabelConfig.getTicketNo() + "-other.txt";
 
-        Map<String, String> replacements = buildReplacements(whiteLabel);
+        Map<String, String> replacements = buildReplacements(whiteLabelConfig);
         TemplateEngine.writeToFile(outputFileName, TemplateEngine.fillFile(templateFile, replacements));
     }
 
-    private static boolean isValidInput(WhiteLabel whiteLabel) {
-        if (whiteLabel == null || whiteLabel.getTicketNo() == null || whiteLabel.getWebSiteName() == null || whiteLabel.getWebSiteValue() == null) {
+    private static boolean isValidInput(WhiteLabelConfig whiteLabelConfig) {
+        if (whiteLabelConfig == null || whiteLabelConfig.getTicketNo() == null || whiteLabelConfig.getWebSiteName() == null || whiteLabelConfig.getWebSiteValue() == null) {
             throw new IllegalArgumentException("輸入資訊不完整");
         }
-		if (whiteLabel.isApiWhiteLabel() && Objects.isNull(whiteLabel.getApiWalletInfo())) {
+		if (whiteLabelConfig.isApiWhiteLabel() && Objects.isNull(whiteLabelConfig.getApiWalletInfo())) {
 			throw new IllegalArgumentException("ApiWallet 資訊不完整");
-		} else if (whiteLabel.isApiWhiteLabel()) {
-			if ((whiteLabel.getApiWalletInfo().getCert() == null
-				|| whiteLabel.getApiWalletInfo().getGroup() == null)) {
+		} else if (whiteLabelConfig.isApiWhiteLabel()) {
+			if ((whiteLabelConfig.getApiWalletInfo().getCert() == null
+				|| whiteLabelConfig.getApiWalletInfo().getGroup() == null)) {
 				throw new IllegalArgumentException("ApiWallet,  Cert 或 Group 不能為空");
 			}
 		}
@@ -239,7 +236,7 @@ public class WhiteLabelTool {
         return camelCaseString.toString();
     }
 	
-	private static String generateUpdateGroupSql(WhiteLabel whiteLabel) {
+	private static String generateUpdateGroupSql(WhiteLabelConfig whiteLabelConfig) {
 		StringBuilder sb = new StringBuilder();
 		// domain group
 		
@@ -248,16 +245,16 @@ public class WhiteLabelTool {
 		String domainingGroupSql = "UPDATE domaingroup SET groupsite = JSON_ARRAY_APPEND(groupsite, '$',  '{$webSiteValue}') "
 			+ "WHERE GROUPNAME = '$group';";
 		sb.append(domainingGroupSql);
-		Map<String, String> replacements = buildReplacements(whiteLabel);
+		Map<String, String> replacements = buildReplacements(whiteLabelConfig);
 		return TemplateEngine.fill(sb.toString(), replacements);
 	}
 	
-	private static String generateNewGroupSql(WhiteLabel whiteLabel, boolean isUat) {
+	private static String generateNewGroupSql(WhiteLabelConfig whiteLabelConfig, boolean isUat) {
 		StringBuilder sb = new StringBuilder();
 		// domain group
 		sb.append("\n");
 		sb.append("\n");
-		ApiWalletInfo apiWalletInfo = whiteLabel.getApiWalletInfo();
+		ApiWalletInfo apiWalletInfo = whiteLabelConfig.getApiWalletInfo();
 		GroupInfo groupInfo = apiWalletInfo.getGroupInfo();
 		if (!isUat) {
 			sb.append("-- API 2.0 Group : (新建)");
@@ -266,7 +263,7 @@ public class WhiteLabelTool {
 				+ "(groupname, privateipsetid, wwwgaipsetid, wwwcfipsetid, apiinfoipsetid, groupsite, updator, updatedate, issinglegroup)\n"
 				+ "VALUES('%s', '%s', '%s', '%s', '%s', '[\"%s\"]', 'system', NOW(6), 1);";
 			String addDomain = String.format(domainingGroupSql, apiWalletInfo.getGroup(), groupInfo.getPrivateIpSetId(), groupInfo.getBkIpSetId().get(0),
-				groupInfo.getBkIpSetId().get(1), groupInfo.getApiInfoBkIpSetId(), whiteLabel.getWebSiteValue());
+				groupInfo.getBkIpSetId().get(1), groupInfo.getApiInfoBkIpSetId(), whiteLabelConfig.getWebSiteValue());
 			sb.append(addDomain);
 			sb.append("\n");
 			sb.append("\n");

@@ -1,4 +1,4 @@
-package dto;
+package tool.whiteLabel;
 
 import lombok.Data;
 
