@@ -1,0 +1,6 @@
+src/main/webapp/META-INF
+web.xml
+vcs.xml
+.gitignore
+target
+.idea
