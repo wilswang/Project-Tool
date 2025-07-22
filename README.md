@@ -12,21 +12,21 @@
 
 ```batch
 # Windows
-project-tool.bat A    # 工具 A: White Label Generator
-project-tool.bat B    # 工具 B: Domain Checker
+project-tool.bat A <configFilePath>   # 工具 A: White Label Generator
+project-tool.bat B                    # 工具 B: Domain Checker
 ```
 
 ```bash
 # Mac / Linux
-./project-tool.sh A   # 工具 A: White Label Generator
-./project-tool.sh B   # 工具 B: Domain Checker
+./project-tool.sh A <configFilePath>  # 工具 A: White Label Generator
+./project-tool.sh B                   # 工具 B: Domain Checker
 ```
 
 ---
 
-## 📥 工具 A: temp.json 檔案格式 (White Label Generator)
+## 📥 工具 A: JSON 檔案格式 (White Label Generator)
 
-請提供一個 JSON 檔案作為輸入，檔名預設為 `whiteLabelConfig.json`。
+請提供一個 JSON 檔案作為輸入，可指定任意檔案路徑與名稱。
 
 ### ✅ JSON 格式說明（WhiteLabel 結構）
 
@@ -73,6 +73,32 @@ project-tool.bat B    # 工具 B: Domain Checker
 | `groupInfo.bkIpSetId`        | string[] | ✅ 是 | 備援 IP 設定 ID，需有兩筆                         |
 | `groupInfo.apiInfoBkIpSetId` | string | ✅ 是 | API 設定 ID                                |
 | `groupInfo.backup`           | string[] | ✅ 是 | 備援 domain 名稱                             |
+
+---
+
+## 🛠 工具 A: 檔案路徑參數使用方式
+
+White Label Generator 現在支援自訂配置檔案路徑，不再限制於預設檔名。
+
+### 使用範例
+
+```bash
+# 使用相對路徑
+./project-tool.sh A ./config/whiteLabelConfig.json
+./project-tool.sh A ./data/site-config.json
+
+# 使用絕對路徑
+./project-tool.sh A /home/user/configs/my-site.json
+
+# 使用不同檔名
+./project-tool.sh A ./custom-config.json
+```
+
+### 參數說明
+- `<configFilePath>`: 必填參數，指定 WhiteLabel 配置檔案的完整路徑
+- 支援相對路徑和絕對路徑
+- 檔案格式必須為有效的 JSON
+- 檔案內容需符合 WhiteLabel 結構驗證要求
 
 ---
 
@@ -125,25 +151,25 @@ mvn package
 ```batch
 # Windows
 cd src\main\resources
-project-tool.bat A    # 執行 White Label Generator
-project-tool.bat B    # 執行 Domain Checker
+project-tool.bat A ./config/my-config.json    # 執行 White Label Generator
+project-tool.bat B                            # 執行 Domain Checker
 ```
 
 ```bash
 # Mac / Linux
 cd src/main/resources
-chmod +x project-tool.sh    # 賦予執行權限（首次執行）
-./project-tool.sh A         # 執行 White Label Generator
-./project-tool.sh B         # 執行 Domain Checker
+chmod +x project-tool.sh                      # 賦予執行權限（首次執行）
+./project-tool.sh A ./config/my-config.json   # 執行 White Label Generator
+./project-tool.sh B                           # 執行 Domain Checker
 ```
 
 ### 📋 執行前準備
 
 1. **建置專案**: 執行 `mvn package` 產生 JAR 檔案
 2. **複製檔案**: 將 `Project-Tool-1.0.4-jar-with-dependencies.jar` 從 `target/` 複製到 `src/main/resources/`
-3. **準備設定檔**: 將對應的 JSON 設定檔放置於 `src/main/resources/` 目錄下
-   - **工具 A**: `whiteLabelConfig.json` 檔案
-   - **工具 B**: `checkDomain.json` 檔案
+3. **準備設定檔**: 準備對應的 JSON 設定檔
+   - **工具 A**: 可使用任意檔案路徑與名稱的 WhiteLabel 設定檔（建議：`whiteLabelConfig.json`）
+   - **工具 B**: 將 `checkDomain.json` 檔案放置於 `src/main/resources/` 目錄下
 4. **Mac/Linux**: 賦予腳本執行權限 `chmod +x project-tool.sh`
 
 ### 🎯 自動功能

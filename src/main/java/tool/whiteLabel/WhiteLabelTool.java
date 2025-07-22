@@ -12,13 +12,14 @@ import java.util.Map;
 import java.util.Collections;
 import java.util.Objects;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 public class WhiteLabelTool {
     private static final String PROJECT_PREFIX = "SACRIC-";
     private static final String OUTPUT_PATH = "./result/";
-    private static final String INPUT_FILE_NAME = "sample-whiteLabel.json";
 	private static final String CONST_JS = "WebSiteType.{$webSiteName} = {\n" + "\t\"value\": {$webSiteValue},\n" + "\t\"shortCode\": \"{$webSiteName}\",\n"
 		+ "\t\"displayName\": \"{$webSiteName}\"\n" + "};\n";
 	private static final String TS_FINANCIAL = "\n@HttpUpdate\n" + "public static boolean ENABLE_TS_FINANCIAL_{$webSiteName} = %s;\n\n";
@@ -45,9 +46,16 @@ public class WhiteLabelTool {
 	}
 	
     public static void main(String[] args) {
+        if (args.length < 1) {
+            System.err.println("請提供配置檔案路徑作為參數");
+            System.err.println("使用方式: java WhiteLabelTool <configFilePath>");
+            System.exit(1);
+        }
+        
+        String configFilePath = args[0];
         try {
             ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-            WhiteLabelConfig whiteLabelConfig = objectMapper.readValue(new File(INPUT_FILE_NAME), WhiteLabelConfig.class);
+            WhiteLabelConfig whiteLabelConfig = objectMapper.readValue(new File(configFilePath), WhiteLabelConfig.class);
 			System.out.println(whiteLabelConfig.toString());
 			whiteLabelConfig.validate();
 			String webSitePageKey = "WEB_SITE_PAGE";
@@ -116,7 +124,9 @@ public class WhiteLabelTool {
 		replacements.put("{$webSiteName}", convertSnakeToCamel(whiteLabelConfig.getWebSiteName()).toUpperCase());
 		replacements.put("{$webSiteValue}", whiteLabelConfig.getWebSiteValue().toString());
 		replacements.put("{$className}", convertSnakeToCamel(whiteLabelConfig.getWebSiteName()));
-		replacements.put("$enumName", whiteLabelConfig.getHost().replace(".", "_").toUpperCase());
+		if (StringUtils.isNotBlank(whiteLabelConfig.getHost())) {
+			replacements.put("$enumName", whiteLabelConfig.getHost().replace(".", "_").toUpperCase());
+		}
 		replacements.put("{$lowerCase}", convertSnakeToCamel(whiteLabelConfig.getWebSiteName()).toLowerCase());
 		if (whiteLabelConfig.isApiWhiteLabel()) {
 			replacements.put("$group", whiteLabelConfig.getApiWalletInfo().getGroup());

@@ -12,7 +12,11 @@ public class MainSelector {
 		
 		switch (option.toUpperCase()) {
 			case "A":
-				WhiteLabelTool.main(new String[]{}); // 可傳遞額外參數
+				if (args.length != 2) {
+					System.out.println("MainSelector A, 需有第二個參數指定檔案");
+					return;
+				}
+				WhiteLabelTool.main(new String[]{args[1]}); // 可傳遞額外參數
 				break;
 			case "B":
 				UrlChecker.main(new String[]{});
