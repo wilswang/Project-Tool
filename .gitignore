@@ -4,3 +4,5 @@ vcs.xml
 .gitignore
 target
 .idea
+.claude/settings.json
+.mcp.json
