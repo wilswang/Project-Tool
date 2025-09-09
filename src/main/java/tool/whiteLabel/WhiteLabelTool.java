@@ -109,7 +109,7 @@ public class WhiteLabelTool {
 		
 		TemplateEngine.writeToFile(outputFileName, content);
     }
-
+	
     private static void generateFromTemplate(WhiteLabelConfig whiteLabelConfig, String templateKey, String outputPath, String suffix) {
         String templateFile = TEMPLATE_PATHS.get(templateKey);
         String className = convertSnakeToCamel(whiteLabelConfig.getWebSiteName());
@@ -124,6 +124,9 @@ public class WhiteLabelTool {
 		replacements.put("{$webSiteName}", convertSnakeToCamel(whiteLabelConfig.getWebSiteName()).toUpperCase());
 		replacements.put("{$webSiteValue}", whiteLabelConfig.getWebSiteValue().toString());
 		replacements.put("{$className}", convertSnakeToCamel(whiteLabelConfig.getWebSiteName()));
+		replacements.put("{$ticketNo}", whiteLabelConfig.getTicketNo());
+		replacements.put("{$jiraSummary}", whiteLabelConfig.getJiraSummary());
+		replacements.put("{$developer}", whiteLabelConfig.getDeveloper());
 		if (StringUtils.isNotBlank(whiteLabelConfig.getHost())) {
 			replacements.put("$enumName", whiteLabelConfig.getHost().replace(".", "_").toUpperCase());
 		}
@@ -262,7 +265,6 @@ public class WhiteLabelTool {
 	private static String generateNewGroupSql(WhiteLabelConfig whiteLabelConfig, boolean isUat) {
 		StringBuilder sb = new StringBuilder();
 		// domain group
-		sb.append("\n");
 		sb.append("\n");
 		ApiWalletInfo apiWalletInfo = whiteLabelConfig.getApiWalletInfo();
 		GroupInfo groupInfo = apiWalletInfo.getGroupInfo();

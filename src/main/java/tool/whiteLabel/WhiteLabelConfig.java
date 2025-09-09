@@ -37,6 +37,15 @@ public class WhiteLabelConfig {
 	
 	private boolean apiWhiteLabel;
 	
+	private boolean customized;
+	
+	@NotNull(message = "jiraSummary 不可為空")
+	private String jiraSummary;
+	
+	private String fixVersion;
+	
+	private String developer = "MCP";
+	
 	@Valid
 	@JsonProperty("apiWalletInfo")
 	private ApiWalletInfo apiWalletInfo;
@@ -106,7 +115,10 @@ public class WhiteLabelConfig {
 	
 	@Override
 	public String toString() {
-		return "WhiteLabel{" + "sqlOnly=" + sqlOnly + ", ticketNo='" + ticketNo + '\'' + ", webSiteValue=" + webSiteValue + ", webSiteName='"
-			+ webSiteName + '\'' + ", host='" + host + '\'' + ", apiWhiteLabel=" + apiWhiteLabel + ", apiWalletInfo=" + apiWalletInfo + '}';
+		return "WhiteLabelConfig{" + "sqlOnly=" + sqlOnly + ", ticketNo='" + ticketNo + '\'' + ", webSiteName='" + webSiteName + '\''
+			+ ", webSiteValue=" + webSiteValue + ", host='" + host + '\'' + ", apiWhiteLabel=" + apiWhiteLabel + ", customized=" + customized
+			+ ", jiraSummary='" + jiraSummary + '\'' + ", fixVersion='" + fixVersion + '\'' + ", developer='" + developer + '\'' + ", apiWalletInfo="
+			+ apiWalletInfo + '}';
 	}
+	
 }

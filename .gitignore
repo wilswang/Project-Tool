@@ -9,3 +9,5 @@ target
 settings.json
 .claude/settings.json
 .claude/settings.json
+/target/
+target
