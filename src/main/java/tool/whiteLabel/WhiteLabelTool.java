@@ -24,8 +24,9 @@ public class WhiteLabelTool {
 		+ "\t\"displayName\": \"{$webSiteName}\"\n" + "};\n";
 	private static final String TS_FINANCIAL = "\n@HttpUpdate\n" + "public static boolean ENABLE_TS_FINANCIAL_{$webSiteName} = %s;\n\n";
 	private static final String ELECTION_FANCY_BET = "\n@HttpUpdate\n" + "public static boolean ENABLE_ELECTION_FANCY_BET_{$webSiteName} = %s;\n\n";
-	private static final List<String> UAT_PUBLIC_DOMAIN_LIST = Arrays.asList("cckk77.net", "cckk77.live");
-	private static final List<String> UAT_PRIVATE_DOMAIN_LIST = Arrays.asList("ppkk77.net", "ppkk77.live");
+	// apiDomainType 1: public, 0:private
+	private static final List<String> UAT_PUBLIC_DOMAIN_LIST = Arrays.asList("qqkk77.net", "qqkk77.live");
+	private static final List<String> UAT_PRIVATE_DOMAIN_LIST = Arrays.asList("cckk77.net", "cckk77.live");
 	
 	private static final Map<String, String> TEMPLATE_PATHS;
 	static {
@@ -294,20 +295,26 @@ public class WhiteLabelTool {
 		sb.append(apiDomainSql);
 		List<String> privateIpList = groupInfo.getPrivateIp();
 		if (isUat) {
-			privateIpList.addAll(UAT_PUBLIC_DOMAIN_LIST);
+			privateIpList.addAll(UAT_PRIVATE_DOMAIN_LIST);
 		}
 		for (int i = 0; i < privateIpList.size(); i++) {
-			String value = "\n\t(apidomainname_id_seq_nextval(), '%s', '%s', 1, %s, 'SYSTEM', 0, NOW(6), NOW(6)),";
-			String temp = String.format(value, apiWalletInfo.getGroup(), privateIpList.get(i), i + 1);
+			int active = 1;
+			if (isUat) {
+				active = UAT_PRIVATE_DOMAIN_LIST.contains(privateIpList.get(i)) ? 1: 0;
+			}
+			String value = "\n\t(apidomainname_id_seq_nextval(), '%s', '%s', %s, %s, 'SYSTEM', 0, NOW(6), NOW(6)),";
+			String temp = String.format(value, apiWalletInfo.getGroup(), privateIpList.get(i), active, i + 1);
 			sb.append(temp);
 		}
-		List<String> backupList = new ArrayList<String>();
-		backupList.addAll(groupInfo.getBackup());
+		List<String> backupList = new ArrayList<String>(groupInfo.getBackup());
 		if (isUat) {
-			backupList.addAll(UAT_PRIVATE_DOMAIN_LIST);
+			backupList.addAll(UAT_PUBLIC_DOMAIN_LIST);
 		}
 		for (int i = 0; i < backupList.size(); i++) {
-			Integer active = i >=2? 0: 1;
+			int active = i >=2? 0: 1;
+			if (isUat) {
+				active = UAT_PUBLIC_DOMAIN_LIST.contains(backupList.get(i)) ? 1: 0;
+			}
 			String value = "\n\t(apidomainname_id_seq_nextval(), '%s', '%s', %s, %s, 'SYSTEM', 1, NOW(6), NOW(6))";
 			String temp = String.format(value, apiWalletInfo.getGroup(), backupList.get(i), active, i + 1);
 			sb.append(temp);
