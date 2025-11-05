@@ -1,0 +1,60 @@
+
+{$webSiteName}({$webSiteValue}, "{$webSiteName}", "{$webSiteName}", {$className}DomainType.class, WicketsProCountryType.class, {$className}WebSitePage.class) {
+	@Override
+	public boolean allowAccess(HttpServletRequest request, HttpSession session, String country, String ip) {
+		int serverType = SystemInfo.getInstance().getServerType();
+		/**
+		 * 目前Player與Agent是 (1)同一台Server (2)同一個Domain (3)同一個登入網址
+		 */
+		if (ServerInfoUtils.isPlayerServer(serverType) || ServerInfoUtils.isAgentServer(serverType)) {
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public String getWebSiteFavicon(String... apiSite) {
+		return "/favicon_{$lowerCase}.ico";
+	}
+
+	@Override
+	public boolean isFromApi() {
+		return false;
+	}
+
+	@Override
+	public BigDecimal getUnifiedTaxRatio() {
+		return SystemConstants.AGENT_UNIFIED_TAX;
+	}
+
+	@Override
+	public boolean isEnableExposureLimit() {
+		return SystemConstants.ENABLE_EXPOSURE_LIMIT;
+	}
+
+	@Override
+	public String getPlayerAgent() throws Exception {
+		throw new Exception("Not Support !!");
+	}
+
+	@Override
+	public ApiAction getApiAction() {
+		return null;
+	}
+
+	@Override
+	public boolean checkDomain() {
+		return false;
+	}
+
+	@Override
+	public Set<String> getCertifiedCode() throws Exception {
+		throw new Exception("Not Support !!");
+	}
+
+	@Override
+	public boolean isBelongHariWebSite() {
+		return true;
+	}
+
+},

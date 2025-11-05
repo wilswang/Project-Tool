@@ -1,0 +1,37 @@
+package com.nv.commons.website.page;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import com.nv.commons.code.EventType;
+import com.nv.commons.dto.Account;
+import com.nv.commons.model.Setting;
+
+public class {$className}WebSitePage extends WebSitePage {
+	
+	private final Set<EventType> forbiddenEventTypes = new HashSet<>();
+	
+	public {$className}WebSitePage() {
+		forbiddenEventTypes.add(EventType.POLITICS);
+		forbiddenEventTypes.add(EventType.HORSE_RACING);
+		forbiddenEventTypes.add(EventType.GREYHOUND_RACING);
+		forbiddenEventTypes.add(EventType.BASKETBALL);
+		forbiddenEventTypes.add(EventType.ELECTION);
+	}
+
+	@Override
+	public boolean isForbiddenEventType(EventType eventType, Account account) {
+		return isContainsForbiddenEventType(eventType, this.forbiddenEventTypes);
+	}
+	
+	@Override
+	public boolean isEnableTsFinancial() {
+		return Setting.ENABLE_TS_FINANCIAL && Setting.ENABLE_TS_FINANCIAL_{$webSiteName};
+	}
+	
+	@Override
+	public boolean isEnableElectionFancyBet() {
+		return Setting.ENABLE_ELECTION_FANCY_BET && Setting.ENABLE_ELECTION_FANCY_BET_{$webSiteName};
+	}
+	
+}

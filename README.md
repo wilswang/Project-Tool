@@ -1,7 +1,7 @@
 # Project Tool 工具說明
 
 這是一個多功能 Java 工具集，包含兩個主要功能：
-- **工具 A (White Label Generator)**: 根據 `whiteLabelConfig.json` 的輸入資料，自動產出 SQL 檔案與對應的 Java/JS 程式碼
+- **工具 A (White Label Generator)**: 根據 `whiteLabelConfig.json` 的輸入資料，自動產出多環境 SQL 檔案與對應的 Java/JS 程式碼
 - **工具 B (Domain Checker)**: 根據 `checkDomain.json` 的設定，批次檢查網域連線狀態
 
 ---
@@ -52,6 +52,49 @@ project-tool.bat B                    # 工具 B: Domain Checker
   }
 }
 ```
+
+---
+
+## 🌍 多環境 SQL 生成架構
+
+工具 A 現已支援**多環境架構**，每次執行會自動為以下環境生成獨立的 SQL 檔案：
+
+| 環境 | 代號 | 靜態資源子域名 | API 子域名 | 說明 |
+|------|------|---------------|-----------|------|
+| 開發環境 | DEV | `devnginx` | `dev9wapi` | 開發測試用 |
+| 測試環境 | UAT | `tberwxsjyk` | `uat9wapi` | User Acceptance Testing |
+| 正式環境 | SIM | `www` | `saapipl` | 生產環境 |
+
+### 📦 輸出檔案格式
+
+執行後會在 `result/` 目錄下產生以下檔案：
+
+```
+result/
+├── SACRIC-{ticketNo}-DEV-DB-01.sql    # DEV 環境 - DB-01
+├── SACRIC-{ticketNo}-DEV-DB-41.sql    # DEV 環境 - DB-41
+├── SACRIC-{ticketNo}-UAT-DB-01.sql    # UAT 環境 - DB-01
+├── SACRIC-{ticketNo}-UAT-DB-41.sql    # UAT 環境 - DB-41
+├── SACRIC-{ticketNo}-SIM-DB-01.sql    # SIM 環境 - DB-01
+└── SACRIC-{ticketNo}-SIM-DB-41.sql    # SIM 環境 - DB-41
+```
+
+### 🔧 模板架構
+
+SQL 生成採用**模板化設計**，支援以下功能：
+- ✅ 環境隔離：每個環境有獨立的模板檔案
+- ✅ 統一管理：SQL 結構集中在 `src/template/` 目錄
+- ✅ 易於擴展：新增環境只需添加對應的模板檔案與枚舉值
+- ✅ 參數替換：透過 `{$placeholder}` 進行動態內容替換
+
+### 📄 相關模板檔案
+
+| 模板檔案 | 用途 |
+|---------|------|
+| `UpdateGroup-SQL-template.txt` | 更新現有 API Group |
+| `NewGroup-SQL-DEV-template.txt` | 新建 API Group (DEV) |
+| `NewGroup-SQL-UAT-template.txt` | 新建 API Group (UAT) |
+| `NewGroup-SQL-SIM-template.txt` | 新建 API Group (SIM) |
 
 ---
 
@@ -197,6 +240,27 @@ chmod +x project-tool.sh                      # 賦予執行權限（首次執�
 
 ## 🛠 建議
 
+### 工具 A (White Label Generator)
 - 若格式變更頻繁，建議改用 JSON Schema 驗證
 - 可搭配 Git commit hook 或 CI 工具自動驗證 JSON 檔案合法性
+- 新增環境時，遵循以下步驟：
+  1. 在 `constant/EnvEnumType.java` 添加新的環境枚舉值
+  2. 在 `src/template/` 創建對應的 `NewGroup-SQL-{ENV}-template.txt`
+  3. 在 `WhiteLabelTool.java` 的 `TEMPLATE_PATHS` 註冊新模板
+- SQL 結構變更建議在模板檔案中統一修改，無需修改 Java 代碼
+
+### 工具 B (Domain Checker)
 - Domain Checker 可搭配 CI/CD 流程進行網域可用性監控
+
+---
+
+## 📝 版本歷史
+
+### v1.0.7 (2025-01-XX)
+- ✨ 新增多環境 SQL 生成架構（DEV/UAT/SIM）
+- ✨ 重構 SQL 生成方式，統一使用模板替換
+- ✨ 新增 `EnvEnumType` 枚舉支援環境配置
+- ✨ 新增環境專屬子域名配置（CORS、前後端分離）
+- 🔧 `generateNewGroupSql` 從布林參數改為環境枚舉參數
+- 🔧 `generateUpdateGroupSql` 完全模板化
+- 📦 輸出檔案命名格式變更：`SACRIC-{ticketNo}-{ENV}-DB-{01|41}.sql`

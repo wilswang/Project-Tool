@@ -1,0 +1,55 @@
+package com.nv.commons.website.page;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import com.nv.commons.code.CurrencyType;
+import com.nv.commons.code.EventType;
+import com.nv.commons.dto.Account;
+import com.nv.commons.model.Setting;
+
+public class {$className}WebSitePage extends WebSitePage {
+	
+	private final Set<EventType> forbiddenEventTypes = new HashSet<>();
+	private final Set<Integer> currencyTypes = new HashSet<>();
+	
+	public {$className}WebSitePage() {
+		forbiddenEventTypes.add(EventType.POLITICS);
+		forbiddenEventTypes.add(EventType.HORSE_RACING);
+		forbiddenEventTypes.add(EventType.GREYHOUND_RACING);
+		forbiddenEventTypes.add(EventType.BASKETBALL);
+		
+		currencyTypes.add(CurrencyType.IR.unique());
+		currencyTypes.add(CurrencyType.PIN.unique());
+		currencyTypes.add(CurrencyType.PKU.unique());
+	}
+	
+	@Override
+	public boolean isForbiddenEventType(EventType eventType, Account account) {
+		// CRIC-910 - PTU, PTS only(關鍵字 CRIC-910 之後可移除hard code 部分)
+		if ((eventType.unique() == EventType.HORSE_RACING.unique())) {
+			return account == null || currencyTypes.contains(account.getCurrencyType());
+		}
+		if (isDisableEventSpecialCheck(eventType)) {
+			return true;
+		}
+		return forbiddenEventTypes.contains(eventType);
+	}
+	
+	// CRIC-1639 Open Horse Racing for Skyexchange, used by report
+	@Override
+	public boolean isForbiddenEventType(EventType eventType) {
+		return isContainsForbiddenEventType(eventType, this.forbiddenEventTypes);
+	}
+	
+	@Override
+	public boolean isEnableTsFinancial() {
+		return Setting.ENABLE_TS_FINANCIAL && Setting.ENABLE_TS_FINANCIAL_{$webSiteName};
+	}
+	
+	@Override
+	public boolean isEnableElectionFancyBet() {
+		return Setting.ENABLE_ELECTION_FANCY_BET && Setting.ENABLE_ELECTION_FANCY_BET_{$webSiteName};
+	}
+	
+}

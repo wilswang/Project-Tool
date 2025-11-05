@@ -1,0 +1,57 @@
+-- SACRIC-{$ticketNo} {$jiraSummary}, {$developer}
+UPDATE systemsetting SET jsonvalue = JSON_ARRAY_APPEND(jsonvalue, '$."1"', {$webSiteValue}), updatedate = NOW(6) WHERE syskey = 'WebSiteGroup';
+
+-- One Click Bet Delay Seconds
+UPDATE systemsetting SET updatedate = NOW(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}":"5"}') WHERE syskey = 'OneClickBetDelaySeconds';
+
+-- Bet Limit Hours
+UPDATE systemsetting SET updatedate = sysdate(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}":"15"}') WHERE syskey = 'MarketBetLimitHours';
+
+-- live match tracker & applyBetLimitTime & applyDisableBetting & offerBetfairExchange & offerGameProduct
+INSERT INTO websitesetting (site, lmtstatus, creator, createdate, updator , updatedate, applybettingsetting, gameproductsetting, freezebettingwhenwithdraw, playerneedlogin , popupmessage, mobilewebsocketsetting, sportsbookfeedingstakeratio, fromapi)
+VALUES ({$webSiteValue}, 1, 'root', sysdate(6), 'root' , sysdate(6), '{
+  "applyBetLimitTime": 1,
+  "applyDisableBetting": 1,
+  "offerBetfairExchange": 1,
+  "enableDabbaModeOddsSetting": 0
+}', '{
+   "offerGameProduct": "[1,2,3,4,5,6,7,8,12,13]"
+}', 1, 0 , '{
+	"mobileImgUrl": "",
+	"desktopImgUrl": "",
+	"mobileMessage": "",
+	"desktopMessage": ""}', '{
+	"enableBetfairWebsocket": "0",
+	"enableFancybetWebsocket": "0",
+	"enableBookmakerWebsocket": "0",
+	"enableSportsbookWebsocket": "0"
+	}', 1, 0);
+
+-- Sign Up Button Url
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_SET(jsonvalue, '$."{$webSiteValue}"', json_object("url", "", "w", "1246", "h", "850")) WHERE syskey = 'PlayerSignUpSetting';
+
+-- Support Info
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_email":""}') WHERE syskey = 'SupportInfo';
+
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_facebook":""}') WHERE syskey = 'SupportInfo';
+
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_imo":""}') WHERE syskey = 'SupportInfo';
+
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_skype":""}') WHERE syskey = 'SupportInfo';
+
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_whatsapp":""}') WHERE syskey = 'SupportInfo';
+
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_twitter":""}') WHERE syskey = 'SupportInfo';
+
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_instagram":""}') WHERE syskey = 'SupportInfo';
+
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_telegram":""}') WHERE syskey = 'SupportInfo';
+
+INSERT INTO corsdomain (name, isactive, subdomainstatic, subdomainapi, createdate, updatedate)
+values {$corsDomainValues}
+
+UPDATE systemsetting
+set updatedate = sysdate(6)
+  , jsonvalue  = JSON_MERGE(jsonvalue, '{ {$enableFrontendBackendSeparationByDomainValues}
+}')
+where syskey = 'EnableFrontendBackendSeparationByDomain';

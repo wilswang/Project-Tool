@@ -1,0 +1,56 @@
+package com.nv.commons.code.domain;
+
+public enum {$className}DomainType implements DomainType {
+	
+	// Player & Agent domain
+	$enumName("$url", true, true);
+	
+	private String host;
+	private boolean isChangeLineGroup = false;
+	private String documentDomainX = null;
+	protected String SSLHost = "";
+	private boolean isMasterDomain = false;
+	
+	private {$className}DomainType(String host, boolean isChangeLineGroup, boolean isMasterDomain) {
+		this.host = host;
+		this.isChangeLineGroup = isChangeLineGroup;
+		this.documentDomainX = "<script>document.domain = '" + host + "';</script>";
+		this.isMasterDomain = isMasterDomain;
+	}
+	
+	public String getHost() {
+		return this.host;
+	}
+	
+	public String getDocumentDomainX() {
+		return this.documentDomainX;
+	}
+	
+	public boolean isChangeLineGroup() {
+		return this.isChangeLineGroup;
+	}
+	
+	public boolean isSslGroup() {
+		return (this.SSLHost.length() != 0);
+	}
+	
+	public String getSSLHost() {
+		return this.SSLHost;
+	}
+	
+	//Default : false
+	public boolean isAgentDomain() {
+		return false;
+	}
+	
+	public boolean isMasterDomain() {
+		return this.isMasterDomain;
+	}
+	
+	@Override
+	public boolean isGoogleCloudPlatformDomain() {
+		return false;
+	}
+	
+}
+

@@ -1,0 +1,18 @@
+-- API 2.0 Group : (新建)
+INSERT INTO domaingroup
+(groupname, privateipsetid, wwwgaipsetid, wwwcfipsetid, apiinfoipsetid, groupsite, updator, updatedate, issinglegroup)
+VALUES('{$group}', '{$privateIpSetId}', '{$wwwgaIpSetId}', '{$wwwcfIpSetId}', '{$apiInfoBkIpSetId}', '["{$webSiteValue}"]', 'system', NOW(6), 1);
+
+-- Add API domain name in DEV
+INSERT INTO apidomainname
+  (id, groupname, name, isactive, priority, remark, apidomaintype, updatedate, createdate)
+VALUES {$apiDomainValues}
+
+INSERT INTO corsdomain (name, isactive, subdomainstatic, subdomainapi, createdate, updatedate)
+values {$corsDomainValues}
+
+UPDATE systemsetting
+set updatedate = sysdate(6)
+  , jsonvalue  = JSON_MERGE(jsonvalue, '{ {$enableFrontendBackendSeparationByDomainValues}
+}')
+where syskey = 'EnableFrontendBackendSeparationByDomain';

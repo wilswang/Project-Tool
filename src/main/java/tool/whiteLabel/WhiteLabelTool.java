@@ -1,5 +1,6 @@
 package tool.whiteLabel;
 
+import constant.EnvEnumType;
 import util.TemplateEngine;
 
 import java.io.*;
@@ -42,7 +43,11 @@ public class WhiteLabelTool {
 		tempMap.put("API_WALLET_WEB_SITE_PAGE", "./template/ApiWalletWebSitePageTemplate.txt");
 		tempMap.put("NEW_SITE_OTHER", "./template/NewSite-WST.txt");
 		tempMap.put("API_OTHER", "./template/ApiWallet-WST.txt");
-		
+		tempMap.put("UPDATE_GROUP_SQL", "./template/UpdateGroup-SQL-template.txt");
+		tempMap.put("NEW_GROUP_SQL_SIM", "./template/NewGroup-SQL-SIM-template.txt");
+		tempMap.put("NEW_GROUP_SQL_UAT", "./template/NewGroup-SQL-UAT-template.txt");
+		tempMap.put("NEW_GROUP_SQL_DEV", "./template/NewGroup-SQL-DEV-template.txt");
+
 		TEMPLATE_PATHS = Collections.unmodifiableMap(tempMap);
 	}
 	
@@ -86,29 +91,32 @@ public class WhiteLabelTool {
             key = isDb01 ? "API_DB_01" : "API_DB_41";
         }
 		String templateFile = TEMPLATE_PATHS.get(key);
-        String suffix = isDb01 ? "-DB-01.sql" : "-DB-41.sql";
-        String outputFileName = OUTPUT_PATH + PROJECT_PREFIX + whiteLabelConfig.getTicketNo() + suffix;
-
-        Map<String, String> replacements = buildReplacements(whiteLabelConfig);
-		
-		String content;
-		String subContent = TemplateEngine.fillFile(templateFile, replacements);
-		if (isDb01) {
-			StringBuilder sb = new StringBuilder(subContent);
-			sb.append("\n");
-			// if sql is for DB01, need to check if new group or not
-			if (Objects.nonNull(whiteLabelConfig.getApiWalletInfo()) && whiteLabelConfig.getApiWalletInfo().isNewGroup()) {
-				sb.append(generateNewGroupSql(whiteLabelConfig, false));
-				sb.append(generateNewGroupSql(whiteLabelConfig, true));
-			} else if (whiteLabelConfig.isApiWhiteLabel()) {
-				sb.append(generateUpdateGroupSql(whiteLabelConfig));
+		for (EnvEnumType envEnumType : EnvEnumType.values()) {
+			
+			String suffix = "-" + envEnumType.name();
+			suffix += isDb01 ? "-DB-01.sql": "-DB-41.sql";
+			String outputFileName = OUTPUT_PATH + PROJECT_PREFIX + whiteLabelConfig.getTicketNo() + suffix;
+			
+			Map<String, String> replacements = buildReplacements(whiteLabelConfig, envEnumType);
+			
+			String content;
+			String subContent = TemplateEngine.fillFile(templateFile, replacements);
+			if (isDb01) {
+				StringBuilder sb = new StringBuilder(subContent);
+				sb.append("\n");
+				// if sql is for DB01, need to check if new group or not
+				if (Objects.nonNull(whiteLabelConfig.getApiWalletInfo()) && whiteLabelConfig.getApiWalletInfo().isNewGroup()) {
+					sb.append(generateNewGroupSql(whiteLabelConfig, envEnumType));
+				} else if (whiteLabelConfig.isApiWhiteLabel()) {
+					sb.append(generateUpdateGroupSql(whiteLabelConfig));
+				}
+				content = sb.toString();
+			} else {
+				content = subContent;
 			}
-			content = sb.toString();
-		} else {
-			content = subContent;
+			
+			TemplateEngine.writeToFile(outputFileName, content);
 		}
-		
-		TemplateEngine.writeToFile(outputFileName, content);
     }
 	
     private static void generateFromTemplate(WhiteLabelConfig whiteLabelConfig, String templateKey, String outputPath, String suffix) {
@@ -121,6 +129,10 @@ public class WhiteLabelTool {
     }
 	
 	private static Map<String, String> buildReplacements(WhiteLabelConfig whiteLabelConfig) {
+		return buildReplacements(whiteLabelConfig, null);
+	}
+	
+	private static Map<String, String> buildReplacements(WhiteLabelConfig whiteLabelConfig, EnvEnumType envEnumType) {
 		Map<String, String> replacements = new HashMap<>();
 		replacements.put("{$webSiteName}", convertSnakeToCamel(whiteLabelConfig.getWebSiteName()).toUpperCase());
 		replacements.put("{$webSiteValue}", whiteLabelConfig.getWebSiteValue().toString());
@@ -130,6 +142,10 @@ public class WhiteLabelTool {
 		replacements.put("{$developer}", whiteLabelConfig.getDeveloper());
 		if (StringUtils.isNotBlank(whiteLabelConfig.getHost())) {
 			replacements.put("$enumName", whiteLabelConfig.getHost().replace(".", "_").toUpperCase());
+			if (envEnumType != null) {
+				replacements.put("$corsDomainValues", getCorsDomainValue(whiteLabelConfig, envEnumType));
+				replacements.put("$enableFrontendBackendSeparationByDomainValues", getEnableFrontendBackendSeparationByDomainValue(whiteLabelConfig, envEnumType));
+			}
 		}
 		replacements.put("{$lowerCase}", convertSnakeToCamel(whiteLabelConfig.getWebSiteName()).toLowerCase());
 		if (whiteLabelConfig.isApiWhiteLabel()) {
@@ -251,80 +267,117 @@ public class WhiteLabelTool {
     }
 	
 	private static String generateUpdateGroupSql(WhiteLabelConfig whiteLabelConfig) {
-		StringBuilder sb = new StringBuilder();
-		// domain group
-		
-		sb.append("-- API 2.0 Group :");
-		sb.append("\n");
-		String domainingGroupSql = "UPDATE domaingroup SET groupsite = JSON_ARRAY_APPEND(groupsite, '$',  '{$webSiteValue}') "
-			+ "WHERE GROUPNAME = '$group';";
-		sb.append(domainingGroupSql);
+		String templateFile = TEMPLATE_PATHS.get("UPDATE_GROUP_SQL");
 		Map<String, String> replacements = buildReplacements(whiteLabelConfig);
-		return TemplateEngine.fill(sb.toString(), replacements);
+		return TemplateEngine.fillFile(templateFile, replacements);
 	}
 	
-	private static String generateNewGroupSql(WhiteLabelConfig whiteLabelConfig, boolean isUat) {
-		StringBuilder sb = new StringBuilder();
-		// domain group
-		sb.append("\n");
+	private static String generateNewGroupSql(WhiteLabelConfig whiteLabelConfig, EnvEnumType envEnumType) {
+		boolean isUat = envEnumType == EnvEnumType.UAT;
 		ApiWalletInfo apiWalletInfo = whiteLabelConfig.getApiWalletInfo();
 		GroupInfo groupInfo = apiWalletInfo.getGroupInfo();
-		if (!isUat) {
-			sb.append("-- API 2.0 Group : (新建)");
-			sb.append("\n");
-			String domainingGroupSql = "INSERT INTO domaingroup\n"
-				+ "(groupname, privateipsetid, wwwgaipsetid, wwwcfipsetid, apiinfoipsetid, groupsite, updator, updatedate, issinglegroup)\n"
-				+ "VALUES('%s', '%s', '%s', '%s', '%s', '[\"%s\"]', 'system', NOW(6), 1);";
-			String addDomain = String.format(domainingGroupSql, apiWalletInfo.getGroup(), groupInfo.getPrivateIpSetId(), groupInfo.getBkIpSetId().get(0),
-				groupInfo.getBkIpSetId().get(1), groupInfo.getApiInfoBkIpSetId(), whiteLabelConfig.getWebSiteValue());
-			sb.append(addDomain);
-			sb.append("\n");
-			sb.append("\n");
-		}
+
+		// 选择模板
+		String templateKey = "NEW_GROUP_SQL_" + envEnumType.name();
+		String templateFile = TEMPLATE_PATHS.get(templateKey);
+
+		// 构建基础替换
+		Map<String, String> replacements = buildReplacements(whiteLabelConfig);
+
+		replacements.put("{$privateIpSetId}", groupInfo.getPrivateIpSetId());
+		replacements.put("{$wwwgaIpSetId}", groupInfo.getBkIpSetId().get(0));
+		replacements.put("{$wwwcfIpSetId}", groupInfo.getBkIpSetId().get(1));
+		replacements.put("{$apiInfoBkIpSetId}", groupInfo.getApiInfoBkIpSetId());
+
+		// 生成 apidomainname VALUES 部分
+		StringBuilder valuesSb = new StringBuilder();
 		
-		if (isUat) {
-			sb.append("-- UAT Only");
-		} else {
-			sb.append("-- add api domain name SIM");
-		}
-		sb.append("\n");
-		// apidomainname
-		String apiDomainSql = "INSERT INTO apidomainname\n"
-			+ "  (id, groupname, name, isactive, priority, remark, apidomaintype, updatedate, createdate)\n"
-			+ "VALUES ";
-		sb.append(apiDomainSql);
-		List<String> privateIpList = groupInfo.getPrivateIp();
+		// 生成 corsdomain VALUES 部分
+		StringBuilder corsDomainSb = new StringBuilder();
+		
+		// 生成 EnableFrontendBackendSeparationByDomain VALUES 部分
+		StringBuilder enableFrontendBackendSeparationByDomainSb = new StringBuilder();
+
+		// privateIpList
+		List<String> privateIpList = new ArrayList<>(groupInfo.getPrivateIp());
 		if (isUat) {
 			privateIpList.addAll(UAT_PRIVATE_DOMAIN_LIST);
 		}
 		for (int i = 0; i < privateIpList.size(); i++) {
 			int active = 1;
 			if (isUat) {
-				active = UAT_PRIVATE_DOMAIN_LIST.contains(privateIpList.get(i)) ? 1: 0;
+				active = UAT_PRIVATE_DOMAIN_LIST.contains(privateIpList.get(i)) ? 1 : 0;
 			}
-			String value = "\n\t(apidomainname_id_seq_nextval(), '%s', '%s', %s, %s, 'SYSTEM', 0, NOW(6), NOW(6)),";
-			String temp = String.format(value, apiWalletInfo.getGroup(), privateIpList.get(i), active, i + 1);
-			sb.append(temp);
+			String value = String.format("\n\t(apidomainname_id_seq_nextval(), '%s', '%s', %s, %s, 'SYSTEM', 0, NOW(6), NOW(6)),",
+				apiWalletInfo.getGroup(), privateIpList.get(i), active, i + 1);
+			valuesSb.append(value);
 		}
-		List<String> backupList = new ArrayList<String>(groupInfo.getBackup());
+
+		// backupList
+		List<String> backupList = new ArrayList<>(groupInfo.getBackup());
 		if (isUat) {
 			backupList.addAll(UAT_PUBLIC_DOMAIN_LIST);
 		}
 		for (int i = 0; i < backupList.size(); i++) {
-			int active = i >=2? 0: 1;
+			int active = i >= 2 ? 0 : 1;
 			if (isUat) {
-				active = UAT_PUBLIC_DOMAIN_LIST.contains(backupList.get(i)) ? 1: 0;
+				active = UAT_PUBLIC_DOMAIN_LIST.contains(backupList.get(i)) ? 1 : 0;
 			}
-			String value = "\n\t(apidomainname_id_seq_nextval(), '%s', '%s', %s, %s, 'SYSTEM', 1, NOW(6), NOW(6))";
-			String temp = String.format(value, apiWalletInfo.getGroup(), backupList.get(i), active, i + 1);
-			sb.append(temp);
+			String value = String.format("\n\t(apidomainname_id_seq_nextval(), '%s', '%s', %s, %s, 'SYSTEM', 1, NOW(6), NOW(6))",
+				apiWalletInfo.getGroup(), backupList.get(i), active, i + 1);
+			valuesSb.append(value);
+			
+			
+			String subDomainStatic = envEnumType.getSubDomainStatic();
+			String subDomainApi = envEnumType.getSubDomainApi();
+			String corsDomainValue = String.format("\n\t('%s', 1, '%s', '%s', sysdate(6), sysdate(6))",
+				backupList.get(i), subDomainStatic, subDomainApi);
+			corsDomainSb.append(corsDomainValue);
+			
+			String frontendBackendSeparation = String.format("\n\t\t\"%s\": 1",
+				backupList.get(i));
+			enableFrontendBackendSeparationByDomainSb.append(frontendBackendSeparation);
+			
 			if (i < (backupList.size() - 1)) {
-				sb.append(",");
+				valuesSb.append(",");
+				corsDomainSb.append(",");
+				enableFrontendBackendSeparationByDomainSb.append(",");
 			} else {
-				sb.append(";\n");
+				valuesSb.append(";");
+				corsDomainSb.append(";");
 			}
 		}
-		return sb.toString();
+
+		// 将 VALUES 添加到替换中
+		replacements.put("{$apiDomainValues}", valuesSb.toString());
+		replacements.put("{$corsDomainValues}", corsDomainSb.toString());
+		replacements.put("{$enableFrontendBackendSeparationByDomainValues}", enableFrontendBackendSeparationByDomainSb.toString());
+
+		// 使用模板填充
+		return TemplateEngine.fillFile(templateFile, replacements);
+	}
+	
+	private static String getCorsDomainValue(WhiteLabelConfig whiteLabelConfig, EnvEnumType envEnumType) {
+		// 生成 corsdomain VALUES 部分
+		StringBuilder corsDomainSb = new StringBuilder();
+		
+		String corsDomainValue = String.format("\n\t('%s', 1, '%s', '%s', sysdate(6), sysdate(6))",
+			whiteLabelConfig.getHost(), envEnumType.getSubDomainStatic(), envEnumType.getSubDomainApi());
+		corsDomainSb.append(corsDomainValue);
+		
+		return corsDomainSb.toString();
+		
+	}
+	
+	private static String getEnableFrontendBackendSeparationByDomainValue(WhiteLabelConfig whiteLabelConfig, EnvEnumType envEnumType) {
+		// 生成 EnableFrontendBackendSeparationByDomain VALUES 部分
+		StringBuilder enableFrontendBackendSeparationByDomainSb = new StringBuilder();
+		
+		String frontendBackendSeparation = String.format("\n\t\t\"%s\": 1",
+			whiteLabelConfig.getHost());
+		enableFrontendBackendSeparationByDomainSb.append(frontendBackendSeparation);
+		
+		return enableFrontendBackendSeparationByDomainSb.toString();
 	}
 }
 

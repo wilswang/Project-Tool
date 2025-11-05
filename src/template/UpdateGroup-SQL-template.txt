@@ -1,0 +1,3 @@
+-- API 2.0 Group :
+UPDATE domaingroup SET groupsite = JSON_ARRAY_APPEND(groupsite, '$',  '{$webSiteValue}') WHERE GROUPNAME = '$group';
+

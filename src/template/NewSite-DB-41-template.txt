@@ -1,0 +1,6 @@
+-- SACRIC-{$ticketNo} {$jiraSummary}, {$developer}
+-- Copy from site 1
+INSERT INTO marketliquidity (id, eventtype, markettype, lowliquidity, manager, updatedate, site)
+	SELECT marketliquidity_id_seq_nextval(), eventtype, markettype, lowliquidity, manager, sysdate(6), {$webSiteValue}
+	FROM marketliquidity WHERE site = 1;
+

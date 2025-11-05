@@ -1,0 +1,34 @@
+-- SACRIC-{$ticketNo} {$jiraSummary}, {$developer}
+UPDATE systemsetting SET jsonvalue = JSON_ARRAY_APPEND(jsonvalue, '$."44"', {$webSiteValue}), updatedate = NOW(6) WHERE syskey = 'WebSiteGroup';
+
+-- One Click Bet Delay Seconds
+UPDATE systemsetting SET updatedate = NOW(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}":"0"}') WHERE syskey = 'OneClickBetDelaySeconds';
+
+-- Bet Limit Hours
+UPDATE systemsetting SET updatedate = sysdate(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}":"-1"}') WHERE syskey = 'MarketBetLimitHours';
+
+-- live match tracker & applyBetLimitTime & applyDisableBetting & offerBetfairExchange & offerGameProduct
+INSERT INTO websitesetting (site, lmtstatus, creator, createdate, updator, updatedate, applybettingsetting, gameproductsetting,
+							freezebettingwhenwithdraw, playerneedlogin, popupmessage, mobilewebsocketsetting, sportsbookfeedingstakeratio, fromapi)
+VALUES ({$webSiteValue}, 1, 'root', sysdate(6), 'root', sysdate(6), '{
+	"applyBetLimitTime": 1,
+	"applyDisableBetting": 1,
+	"offerBetfairExchange": 0,
+	"enableDabbaModeOddsSetting": 0
+}', '{
+	"offerGameProduct": "[1,2,3,5,6,12]"
+}', 1, 0, '{
+	"mobileImgUrl": "",
+	"desktopImgUrl": "",
+	"mobileMessage": "",
+	"desktopMessage": ""
+}','{
+	"enableBetfairWebsocket": "0",
+	"enableFancybetWebsocket": "0",
+	"enableBookmakerWebsocket": "0",
+	"enableSportsbookWebsocket": "0"
+}', 1, 1);
+
+-- Mail Info
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_recipients":""}') WHERE syskey = 'MailInfo';
+
