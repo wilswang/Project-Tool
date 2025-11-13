@@ -48,7 +48,7 @@ UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonval
 UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_telegram":""}') WHERE syskey = 'SupportInfo';
 
 INSERT INTO corsdomain (name, isactive, subdomainstatic, subdomainapi, createdate, updatedate)
-values {$corsDomainValues}
+values {$corsDomainValues};
 
 UPDATE systemsetting
 set updatedate = sysdate(6)

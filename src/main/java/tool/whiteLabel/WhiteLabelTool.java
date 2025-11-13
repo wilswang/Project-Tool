@@ -30,6 +30,9 @@ public class WhiteLabelTool {
 	private static final List<String> UAT_PRIVATE_DOMAIN_LIST = Arrays.asList("cckk77.net", "cckk77.live");
 	
 	private static final Map<String, String> TEMPLATE_PATHS;
+	private static final String DOMAIN_TYPE_PACKAGE = "../src/main/java/com/nv/commons/code/domain/";
+	private static final String WEBSITE_PAGE_PACKAGE = "../src/main/java/com/nv/commons/website/page/";
+	private static final String WEBSITE_TYPE_PATH = "../src/main/java/com/nv/commons/code/WebSiteType.java";
 	static {
 		Map<String, String> tempMap = new HashMap<>();
 		tempMap.put("DB_01", "./template/NewSite-DB-01-template.txt");
@@ -70,12 +73,12 @@ public class WhiteLabelTool {
                 generateSqlFile(whiteLabelConfig, false);
                 if (!whiteLabelConfig.isSqlOnly()) {
                     if (!whiteLabelConfig.isApiWhiteLabel()) {
-                        generateFromTemplate(whiteLabelConfig, "DOMAIN_TYPE", "../src/main/java/com/nv/commons/code/domain/", "DomainType.java");
+                        generateFromTemplate(whiteLabelConfig, "DOMAIN_TYPE", DOMAIN_TYPE_PACKAGE, "DomainType.java");
 //                        generateFromTemplate(whiteLabel, "COUNTRY_TYPE", "../src/main/java/com/nv/commons/code/domain/", "CountryType.java");
                     } else {
 						webSitePageKey = "API_WALLET_WEB_SITE_PAGE";
 					}
-                    generateFromTemplate(whiteLabelConfig, webSitePageKey, "../src/main/java/com/nv/commons/website/page/", "WebSitePage.java");
+                    generateFromTemplate(whiteLabelConfig, webSitePageKey, WEBSITE_PAGE_PACKAGE, "WebSitePage.java");
 					insertIntoJava(whiteLabelConfig);
 				}
 				//                generateOther(whiteLabel);
@@ -141,10 +144,10 @@ public class WhiteLabelTool {
 		replacements.put("{$jiraSummary}", whiteLabelConfig.getJiraSummary());
 		replacements.put("{$developer}", whiteLabelConfig.getDeveloper());
 		if (StringUtils.isNotBlank(whiteLabelConfig.getHost())) {
-			replacements.put("$enumName", whiteLabelConfig.getHost().replace(".", "_").toUpperCase());
+			replacements.put("{$enumName}", whiteLabelConfig.getHost().replace(".", "_").toUpperCase());
 			if (envEnumType != null) {
-				replacements.put("$corsDomainValues", getCorsDomainValue(whiteLabelConfig, envEnumType));
-				replacements.put("$enableFrontendBackendSeparationByDomainValues", getEnableFrontendBackendSeparationByDomainValue(whiteLabelConfig, envEnumType));
+				replacements.put("{$corsDomainValues}", getCorsDomainValue(whiteLabelConfig, envEnumType));
+				replacements.put("{$enableFrontendBackendSeparationByDomainValues}", getEnableFrontendBackendSeparationByDomainValue(whiteLabelConfig, envEnumType));
 			}
 		}
 		replacements.put("{$lowerCase}", convertSnakeToCamel(whiteLabelConfig.getWebSiteName()).toLowerCase());
@@ -161,12 +164,45 @@ public class WhiteLabelTool {
 		String templateKey = whiteLabelConfig.isApiWhiteLabel() ? "API_OTHER" : "NEW_SITE_OTHER";
 		String templateFile = TEMPLATE_PATHS.get(templateKey);
 		String outputFileName = OUTPUT_PATH + PROJECT_PREFIX + whiteLabelConfig.getTicketNo() + "-other.txt";
+		List<String> requiredImports = new ArrayList<>();
+		String className = convertSnakeToCamel(whiteLabelConfig.getWebSiteName());
+		// 将路径转换为 import 语句
+		requiredImports.add(convertPathToPackage(WEBSITE_PAGE_PACKAGE, className + "WebSitePage.java"));
+		
+		if (!whiteLabelConfig.isApiWhiteLabel()) {
+			requiredImports.add(convertPathToPackage(DOMAIN_TYPE_PACKAGE, className + "DomainType.java"));
+		}
 		
 		Map<String, String> replacements = buildReplacements(whiteLabelConfig);
 		String content = TemplateEngine.fillFile(templateFile, replacements);
 		try {
+			// === 示例：在插入代碼前，先插入需要的 import 語句 ===
+
+			// 方式1: 直接傳入完整的 import 語句
+			// insertImportStatement(
+			//     Paths.get("../src/main/java/com/nv/commons/code/WebSiteType.java"),
+			//     "import java.util.concurrent.ConcurrentHashMap;"
+			// );
+
+			// 方式2: 只傳入類別的完整路徑（方法會自動加上 import 和分號）
+			// insertImportStatement(
+			//     Paths.get("../src/main/java/com/nv/commons/model/Setting.java"),
+			//     "com.nv.commons.util.DateHelper"
+			// );
+
+			// 方式3: 批量插入多個 import（如果需要）
+			// Path settingJavaFile = Paths.get("../src/main/java/com/nv/commons/model/Setting.java");
+			// insertImportStatement(settingJavaFile, "java.util.Arrays");
+			// insertImportStatement(settingJavaFile, "java.util.Collections");
+			// insertImportStatement(settingJavaFile, "com.nv.commons.annotation.HttpUpdate");
+
 			//insert into WebSiteType.java
-			insertAtMarker(Paths.get("../src/main/java/com/nv/commons/code/WebSiteType.java"), "// insert New White Label", content, false);
+			insertAtMarker(Paths.get(WEBSITE_TYPE_PATH), "// insert New White Label", content, false);
+			//insert import
+			for (String importPath : requiredImports) {
+				insertImportStatement(Paths.get(WEBSITE_TYPE_PATH), importPath);
+			}
+			
 			//insert into Setting.java
 			String isEnable = whiteLabelConfig.isApiWhiteLabel() ? "false" : "true";
 			String setting1 = TemplateEngine.fill(String.format(TS_FINANCIAL, isEnable), replacements);
@@ -181,6 +217,150 @@ public class WhiteLabelTool {
 		}
 	}
 	
+	/**
+	 * 在 Java 檔案中智能插入 import 語句，自動排序並避免重複
+	 * Import 排序規則：java.* -> javax.* -> org.* -> com.* -> 其他（各組內按字母順序）
+	 *
+	 * @param javaFile Java 檔案路徑
+	 * @param importStatement 要插入的 import 語句（例如: "import java.util.List;" 或 "java.util.List"）
+	 * @throws IOException 讀寫檔案錯誤
+	 */
+	private static void insertImportStatement(Path javaFile, String importStatement) throws IOException {
+		// 標準化 import 語句格式
+		String normalizedImport = importStatement.trim();
+		if (!normalizedImport.startsWith("import ")) {
+			normalizedImport = "import " + normalizedImport;
+		}
+		if (!normalizedImport.endsWith(";")) {
+			normalizedImport = normalizedImport + ";";
+		}
+
+		List<String> lines = Files.readAllLines(javaFile);
+		List<String> result = new ArrayList<>();
+
+		// 找到 import 區域的開始和結束位置
+		int firstImportIndex = -1;
+		int lastImportIndex = -1;
+		int packageIndex = -1;
+
+		for (int i = 0; i < lines.size(); i++) {
+			String line = lines.get(i).trim();
+			if (line.startsWith("package ")) {
+				packageIndex = i;
+			}
+			if (line.startsWith("import ")) {
+				if (firstImportIndex == -1) {
+					firstImportIndex = i;
+				}
+				lastImportIndex = i;
+
+				// 檢查是否已存在相同的 import
+				if (line.equals(normalizedImport)) {
+					System.out.println("⚠️  Import 已存在，跳過: " + normalizedImport);
+					return;
+				}
+			}
+		}
+
+		// 如果沒有找到任何 import，在 package 語句後插入
+		if (firstImportIndex == -1) {
+			int insertPosition = packageIndex + 1;
+			for (int i = 0; i < lines.size(); i++) {
+				result.add(lines.get(i));
+				if (i == insertPosition) {
+					result.add("");
+					result.add(normalizedImport);
+				}
+			}
+		} else {
+			// 找到正確的插入位置
+			int insertPosition = findImportInsertPosition(lines, firstImportIndex, lastImportIndex, normalizedImport);
+
+			for (int i = 0; i < lines.size(); i++) {
+				if (i == insertPosition) {
+					result.add(normalizedImport);
+				}
+				result.add(lines.get(i));
+			}
+		}
+
+		String fileName = javaFile.getFileName().toString();
+		System.out.println("✅ Import 已成功插入至 " + fileName + ": " + normalizedImport);
+		Files.write(javaFile, result);
+	}
+
+	/**
+	 * 根據 import 排序規則找到正確的插入位置
+	 *
+	 * @param lines 檔案所有行
+	 * @param firstImportIndex 第一個 import 的索引
+	 * @param lastImportIndex 最後一個 import 的索引
+	 * @param newImport 要插入的 import 語句
+	 * @return 應該插入的位置索引
+	 */
+	private static int findImportInsertPosition(List<String> lines, int firstImportIndex, int lastImportIndex, String newImport) {
+		String newPackage = extractPackageFromImport(newImport);
+		int importGroup = getImportGroup(newPackage);
+
+		// 從第一個 import 開始尋找
+		for (int i = firstImportIndex; i <= lastImportIndex; i++) {
+			String currentLine = lines.get(i).trim();
+			if (!currentLine.startsWith("import ")) {
+				continue;
+			}
+
+			String currentPackage = extractPackageFromImport(currentLine);
+			int currentGroup = getImportGroup(currentPackage);
+
+			// 如果當前 import 屬於更後面的分組，或同組但字母順序在後，則插入在此行之前
+			if (currentGroup > importGroup) {
+				return i;
+			} else if (currentGroup == importGroup && currentPackage.compareTo(newPackage) > 0) {
+				return i;
+			}
+		}
+
+		// 如果沒有找到合適的位置，插入在最後一個 import 之後
+		return lastImportIndex + 1;
+	}
+
+	/**
+	 * 從 import 語句中提取 package 名稱
+	 *
+	 * @param importStatement import 語句
+	 * @return package 名稱
+	 */
+	private static String extractPackageFromImport(String importStatement) {
+		String trimmed = importStatement.trim();
+		trimmed = trimmed.replace("import ", "").replace(";", "").trim();
+		return trimmed;
+	}
+
+	/**
+	 * 根據 package 名稱判斷所屬的分組
+	 * 0: java.*
+	 * 1: javax.*
+	 * 2: org.* (Apache, Spring 等第三方庫)
+	 * 3: com.* (公司內部或其他第三方庫)
+	 * 4: 其他
+	 *
+	 * @param packageName package 名稱
+	 * @return 分組編號
+	 */
+	private static int getImportGroup(String packageName) {
+		if (packageName.startsWith("java.")) {
+			return 0;
+		} else if (packageName.startsWith("javax.")) {
+			return 1;
+		} else if (packageName.startsWith("org.")) {
+			return 2;
+		} else if (packageName.startsWith("com.")) {
+			return 3;
+		} else {
+			return 4;
+		}
+	}
+
 	/**
 	 * 在 .java 檔中找到包含 keyword 的行，並依該行的縮排，在前或後插入 insertContent。
 	 *
@@ -379,6 +559,40 @@ public class WhiteLabelTool {
 		
 		return enableFrontendBackendSeparationByDomainSb.toString();
 	}
+	
+	private static String convertPathToPackage(String path, String className) {
+		// 标准化路径分隔符
+		String normalized = path.replace("\\", "/");
+		
+		// 找到 "com" 的起始位置
+		int comIndex = normalized.indexOf("com/");
+		if (comIndex == -1) {
+			comIndex = normalized.indexOf("com");
+		}
+		
+		if (comIndex == -1) {
+			throw new IllegalArgumentException("路径中未找到 'com': " + path);
+		}
+		
+		// 提取从 com 开始的部分
+		String packagePath = normalized.substring(comIndex);
+		
+		// 移除结尾的 "/"
+		packagePath = packagePath.replaceAll("/+$", "");
+		
+		// 将 "/" 替换为 "."
+		String packageName = packagePath.replace("/", ".");
+		
+		// 如果提供了类名，添加到包名后面
+		if (className != null && !className.isEmpty()) {
+			// 移除 .java 扩展名
+			String classNameWithoutExt = className.replace(".java", "");
+			packageName = packageName + "." + classNameWithoutExt;
+		}
+		
+		return packageName;
+	}
+	
 }
 
 //class WhiteLabel {
@@ -494,3 +708,4 @@ public class WhiteLabelTool {
 //
 //	}
 //}
+

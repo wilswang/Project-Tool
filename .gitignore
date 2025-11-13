@@ -11,3 +11,4 @@ settings.json
 .claude/settings.json
 /target/
 target
+/USAGE_EXAMPLE.md
