@@ -1,0 +1,11 @@
+{
+  "sqlOnly": false,
+  "ticketNo": "TEST-001",
+  "webSiteName": "TEST_SITE",
+  "webSiteValue": 999,
+  "host": "testsite.com",
+  "apiWhiteLabel": false,
+  "jiraSummary": "Test white label implementation with new PlaceholderMapper",
+  "developer": "MCP",
+  "customized": false
+}

@@ -16,11 +16,16 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 public class WhiteLabelConfig {
-	
+
 	private boolean sqlOnly;
 	
 	@NotBlank(message = "ticketNo 不可為空")
@@ -49,7 +54,44 @@ public class WhiteLabelConfig {
 	@Valid
 	@JsonProperty("apiWalletInfo")
 	private ApiWalletInfo apiWalletInfo;
-	
+
+	/**
+	 * 额外的动态属性（JSON 中未在类中定义的字段）
+	 * 支持在不修改类定义的情况下添加新的占位符
+	 */
+	private Map<String, Object> additionalProperties = new HashMap<>();
+
+	/**
+	 * Jackson 反序列化时，将未知字段存入 additionalProperties
+	 *
+	 * @param name 字段名
+	 * @param value 字段值
+	 */
+	@JsonAnySetter
+	public void setAdditionalProperty(String name, Object value) {
+		this.additionalProperties.put(name, value);
+	}
+
+	/**
+	 * Jackson 序列化时，将 additionalProperties 中的字段输出到 JSON
+	 *
+	 * @return 额外属性 Map
+	 */
+	@JsonAnyGetter
+	public Map<String, Object> getAdditionalProperties() {
+		return this.additionalProperties;
+	}
+
+	/**
+	 * 获取额外属性的值
+	 *
+	 * @param name 属性名
+	 * @return 属性值，不存在则返回 null
+	 */
+	public Object getAdditionalProperty(String name) {
+		return this.additionalProperties.get(name);
+	}
+
 	public void validate() {
 		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
 		Validator validator = factory.getValidator();
@@ -118,7 +160,7 @@ public class WhiteLabelConfig {
 		return "WhiteLabelConfig{" + "sqlOnly=" + sqlOnly + ", ticketNo='" + ticketNo + '\'' + ", webSiteName='" + webSiteName + '\''
 			+ ", webSiteValue=" + webSiteValue + ", host='" + host + '\'' + ", apiWhiteLabel=" + apiWhiteLabel + ", customized=" + customized
 			+ ", jiraSummary='" + jiraSummary + '\'' + ", fixVersion='" + fixVersion + '\'' + ", developer='" + developer + '\'' + ", apiWalletInfo="
-			+ apiWalletInfo + '}';
+			+ apiWalletInfo + ", additionalProperties=" + additionalProperties + '}';
 	}
 	
 }

@@ -3,7 +3,7 @@ package com.nv.commons.code.domain;
 public enum {$className}DomainType implements DomainType {
 	
 	// Player & Agent domain
-	$enumName("$url", true, true);
+	$enumName("{$url}", true, true);
 	
 	private String host;
 	private boolean isChangeLineGroup = false;
