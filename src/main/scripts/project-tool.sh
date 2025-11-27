@@ -8,7 +8,7 @@ if [ ! -d "$TARGET_DIR" ]; then
   echo "📁 建立資料夾 $TARGET_DIR"
   mkdir -p "$TARGET_DIR"
 fi
-JAR_FILE="./Project-Tool-1.0.4-jar-with-dependencies.jar"
+JAR_FILE="./Project-Tool-1.1.1-jar-with-dependencies.jar"
 
 if [ ! -f "$JAR_FILE" ]; then
   echo "❌ JAR 檔案不存在，請先執行 'mvn package'"

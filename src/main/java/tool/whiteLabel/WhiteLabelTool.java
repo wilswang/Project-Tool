@@ -183,7 +183,7 @@ public class WhiteLabelTool {
 			.derivedIf("{$group}",
 				WhiteLabelConfig::isApiWhiteLabel,
 				config -> config.getApiWalletInfo().getGroup())
-			.derivedIf("$cert",
+			.derivedIf("{$cert}",
 				WhiteLabelConfig::isApiWhiteLabel,
 				config -> config.getApiWalletInfo().getCert())
 			.build();
