@@ -1,0 +1,11 @@
+{
+  "ticketNo": "TEST-002",
+  "webSiteName": "TEST_SITE",
+  "webSiteValue": 999,
+  "host": "testsite.com",
+  "apiWhiteLabel": false,
+  "jiraSummary": "Test unknown field",
+  "developer": "MCP",
+  "newField": "This is a new field NOT defined in WhiteLabelConfig.java",
+  "anotherNewField": "Another unknown field"
+}

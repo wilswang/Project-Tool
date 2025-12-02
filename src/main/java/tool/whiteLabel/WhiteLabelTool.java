@@ -2,12 +2,15 @@ package tool.whiteLabel;
 
 import constant.EnvEnumType;
 import util.TemplateEngine;
+import util.placeholder.PlaceholderMapper;
+import util.placeholder.Transformers;
 
 import java.io.*;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Collections;
@@ -21,6 +24,19 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 public class WhiteLabelTool {
     private static final String PROJECT_PREFIX = "SACRIC-";
     private static final String OUTPUT_PATH = "./result/";
+
+	/**
+	 * 基础占位符映射缓存（不含环境相关参数）
+	 * 用于避免重复计算相同的基础映射
+	 */
+	private static Map<String, String> baseReplacementsCache = null;
+
+	/**
+	 * 环境相关占位符映射缓存（按环境类型区分）
+	 * Key: EnvEnumType (DEV/UAT/SIM)
+	 * Value: 包含环境相关占位符的完整映射
+	 */
+	private static final Map<EnvEnumType, Map<String, String>> envReplacementsCache = new HashMap<>();
 	private static final String CONST_JS = "WebSiteType.{$webSiteName} = {\n" + "\t\"value\": {$webSiteValue},\n" + "\t\"shortCode\": \"{$webSiteName}\",\n"
 		+ "\t\"displayName\": \"{$webSiteName}\"\n" + "};\n";
 	private static final String TS_FINANCIAL = "\n@HttpUpdate\n" + "public static boolean ENABLE_TS_FINANCIAL_{$webSiteName} = %s;\n\n";
@@ -39,8 +55,6 @@ public class WhiteLabelTool {
 		tempMap.put("DB_41", "./template/NewSite-DB-41-template.txt");
 		tempMap.put("API_DB_01", "./template/ApiWallet-DB-01-template.txt");
 		tempMap.put("API_DB_41", "./template/ApiWallet-DB-41-template.txt");
-//		tempMap.put("ADD_NEW_GROUP", "./template/ApiWallet-newGroup-DB-01-template.txt");
-//		tempMap.put("UPDATE_GROUP", "./template/ApiWallet-updateGroup-DB-01-template.txt");
 		tempMap.put("DOMAIN_TYPE", "./template/DomainTypeTemplate.txt");
 		tempMap.put("WEB_SITE_PAGE", "./template/WebSitePageTemplate.txt");
 		tempMap.put("API_WALLET_WEB_SITE_PAGE", "./template/ApiWalletWebSitePageTemplate.txt");
@@ -60,7 +74,10 @@ public class WhiteLabelTool {
             System.err.println("使用方式: java WhiteLabelTool <configFilePath>");
             System.exit(1);
         }
-        
+
+		// 清空缓存，确保每次运行都是干净的状态
+		clearReplacementsCache();
+
         String configFilePath = args[0];
         try {
             ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
@@ -68,21 +85,18 @@ public class WhiteLabelTool {
 			System.out.println(whiteLabelConfig.toString());
 			whiteLabelConfig.validate();
 			String webSitePageKey = "WEB_SITE_PAGE";
-//            if (isValidInput(whiteLabel)) {
-                generateSqlFile(whiteLabelConfig, true);
-                generateSqlFile(whiteLabelConfig, false);
-                if (!whiteLabelConfig.isSqlOnly()) {
-                    if (!whiteLabelConfig.isApiWhiteLabel()) {
-                        generateFromTemplate(whiteLabelConfig, "DOMAIN_TYPE", DOMAIN_TYPE_PACKAGE, "DomainType.java");
-//                        generateFromTemplate(whiteLabel, "COUNTRY_TYPE", "../src/main/java/com/nv/commons/code/domain/", "CountryType.java");
-                    } else {
-						webSitePageKey = "API_WALLET_WEB_SITE_PAGE";
-					}
-                    generateFromTemplate(whiteLabelConfig, webSitePageKey, WEBSITE_PAGE_PACKAGE, "WebSitePage.java");
-					insertIntoJava(whiteLabelConfig);
+			generateSqlFile(whiteLabelConfig, true);
+			generateSqlFile(whiteLabelConfig, false);
+			if (!whiteLabelConfig.isSqlOnly()) {
+				if (!whiteLabelConfig.isApiWhiteLabel()) {
+					generateFromTemplate(whiteLabelConfig, "DOMAIN_TYPE", DOMAIN_TYPE_PACKAGE, "DomainType.java");
+//					generateFromTemplate(whiteLabel, "COUNTRY_TYPE", "../src/main/java/com/nv/commons/code/domain/", "CountryType.java");
+				} else {
+					webSitePageKey = "API_WALLET_WEB_SITE_PAGE";
 				}
-				//                generateOther(whiteLabel);
-//            }
+				generateFromTemplate(whiteLabelConfig, webSitePageKey, WEBSITE_PAGE_PACKAGE, "WebSitePage.java");
+				insertIntoJava(whiteLabelConfig);
+			}
         } catch (IOException e) {
             System.err.println("處理 JSON 檔案時發生錯誤: " + e.getMessage());
         }
@@ -131,33 +145,84 @@ public class WhiteLabelTool {
 		TemplateEngine.writeToFile(outputFileName, TemplateEngine.fillFile(templateFile, replacements));
     }
 	
+	/**
+	 * 清空占位符映射缓存
+	 * 在每次 main() 执行开始时调用，确保缓存一致性
+	 */
+	private static void clearReplacementsCache() {
+		baseReplacementsCache = null;
+		envReplacementsCache.clear();
+	}
+
 	private static Map<String, String> buildReplacements(WhiteLabelConfig whiteLabelConfig) {
 		return buildReplacements(whiteLabelConfig, null);
 	}
-	
+
+	/**
+	 * 构建基础占位符映射（不含环境相关参数）
+	 * 此方法的结果会被缓存，避免重复计算
+	 *
+	 * @param whiteLabelConfig 白标配置
+	 * @return 基础占位符映射
+	 */
+	private static Map<String, String> buildBaseReplacements(WhiteLabelConfig whiteLabelConfig) {
+		return PlaceholderMapper.builder(whiteLabelConfig)
+			.autoMap()  // 自动映射所有字段（包含动态字段）
+			// 添加派生映射（需要转换的字段）
+			.derived("{$webSiteName}", config -> Transformers.SNAKE_TO_CAMEL_UPPER.transform(config.getWebSiteName()))
+			.derived("{$className}", config -> Transformers.SNAKE_TO_CAMEL.transform(config.getWebSiteName()))
+			.derived("{$lowerCase}", config -> Transformers.SNAKE_TO_CAMEL_LOWER.transform(config.getWebSiteName()))
+			// 条件映射：仅在 host 不为空时添加
+			.derivedIf("{$enumName}",
+				config -> StringUtils.isNotBlank(config.getHost()),
+				config -> Transformers.DOT_TO_UNDERSCORE_UPPER.transform(config.getHost()))
+			.derivedIf("{$url}",
+				config -> !config.isApiWhiteLabel() && StringUtils.isNotBlank(config.getHost()),
+				WhiteLabelConfig::getHost)
+			// API 白标相关映射
+			.derivedIf("{$group}",
+				WhiteLabelConfig::isApiWhiteLabel,
+				config -> config.getApiWalletInfo().getGroup())
+			.derivedIf("{$cert}",
+				WhiteLabelConfig::isApiWhiteLabel,
+				config -> config.getApiWalletInfo().getCert())
+			.build();
+	}
+
+	/**
+	 * 构建占位符映射（优化版本 - 使用缓存机制）
+	 *
+	 * @param whiteLabelConfig 白标配置
+	 * @param envEnumType 环境类型（可选）
+	 * @return 占位符映射
+	 */
 	private static Map<String, String> buildReplacements(WhiteLabelConfig whiteLabelConfig, EnvEnumType envEnumType) {
-		Map<String, String> replacements = new HashMap<>();
-		replacements.put("{$webSiteName}", convertSnakeToCamel(whiteLabelConfig.getWebSiteName()).toUpperCase());
-		replacements.put("{$webSiteValue}", whiteLabelConfig.getWebSiteValue().toString());
-		replacements.put("{$className}", convertSnakeToCamel(whiteLabelConfig.getWebSiteName()));
-		replacements.put("{$ticketNo}", whiteLabelConfig.getTicketNo());
-		replacements.put("{$jiraSummary}", whiteLabelConfig.getJiraSummary());
-		replacements.put("{$developer}", whiteLabelConfig.getDeveloper());
-		if (StringUtils.isNotBlank(whiteLabelConfig.getHost())) {
-			replacements.put("{$enumName}", whiteLabelConfig.getHost().replace(".", "_").toUpperCase());
-			if (envEnumType != null) {
-				replacements.put("{$corsDomainValues}", getCorsDomainValue(whiteLabelConfig, envEnumType));
-				replacements.put("{$enableFrontendBackendSeparationByDomainValues}", getEnableFrontendBackendSeparationByDomainValue(whiteLabelConfig, envEnumType));
+		// 1. 获取或创建基础映射缓存
+		if (baseReplacementsCache == null) {
+			baseReplacementsCache = buildBaseReplacements(whiteLabelConfig);
+			System.out.println("✅ 基础占位符映射已缓存（" + baseReplacementsCache.size() + " 个）");
+		}
+
+		// 2. 如果没有环境参数，直接返回基础映射的副本
+		if (envEnumType == null) {
+			return new LinkedHashMap<>(baseReplacementsCache);
+		}
+
+		// 3. 检查环境映射缓存，如果不存在则创建
+		return envReplacementsCache.computeIfAbsent(envEnumType, env -> {
+			// 复制基础映射
+			Map<String, String> replacements = new LinkedHashMap<>(baseReplacementsCache);
+
+			// 添加环境相关的动态占位符（仅 2 个）
+			if (StringUtils.isNotBlank(whiteLabelConfig.getHost())) {
+				replacements.put("{$corsDomainValues}", getCorsDomainValue(whiteLabelConfig, env));
+				replacements.put("{$enableFrontendBackendSeparationByDomainValues}",
+					getEnableFrontendBackendSeparationByDomainValue(whiteLabelConfig, env));
 			}
-		}
-		replacements.put("{$lowerCase}", convertSnakeToCamel(whiteLabelConfig.getWebSiteName()).toLowerCase());
-		if (whiteLabelConfig.isApiWhiteLabel()) {
-			replacements.put("$group", whiteLabelConfig.getApiWalletInfo().getGroup());
-			replacements.put("$cert", whiteLabelConfig.getApiWalletInfo().getCert());
-		} else {
-			replacements.put("$url", whiteLabelConfig.getHost());
-		}
-		return replacements;
+
+			System.out.println("✅ " + env.name() + " 环境占位符映射已缓存（" + replacements.size() + " 个）");
+			return replacements;
+		});
 	}
 	
 	private static void insertIntoJava(WhiteLabelConfig whiteLabelConfig) {
@@ -412,30 +477,6 @@ public class WhiteLabelTool {
 		return line.substring(0, index);
 	}
 
-    private static void generateOther(WhiteLabelConfig whiteLabelConfig) {
-        String templateKey = whiteLabelConfig.isApiWhiteLabel() ? "API_OTHER" : "NEW_SITE_OTHER";
-        String templateFile = TEMPLATE_PATHS.get(templateKey);
-        String outputFileName = OUTPUT_PATH + PROJECT_PREFIX + whiteLabelConfig.getTicketNo() + "-other.txt";
-
-        Map<String, String> replacements = buildReplacements(whiteLabelConfig);
-        TemplateEngine.writeToFile(outputFileName, TemplateEngine.fillFile(templateFile, replacements));
-    }
-
-    private static boolean isValidInput(WhiteLabelConfig whiteLabelConfig) {
-        if (whiteLabelConfig == null || whiteLabelConfig.getTicketNo() == null || whiteLabelConfig.getWebSiteName() == null || whiteLabelConfig.getWebSiteValue() == null) {
-            throw new IllegalArgumentException("輸入資訊不完整");
-        }
-		if (whiteLabelConfig.isApiWhiteLabel() && Objects.isNull(whiteLabelConfig.getApiWalletInfo())) {
-			throw new IllegalArgumentException("ApiWallet 資訊不完整");
-		} else if (whiteLabelConfig.isApiWhiteLabel()) {
-			if ((whiteLabelConfig.getApiWalletInfo().getCert() == null
-				|| whiteLabelConfig.getApiWalletInfo().getGroup() == null)) {
-				throw new IllegalArgumentException("ApiWallet,  Cert 或 Group 不能為空");
-			}
-		}
-        return true;
-    }
-
     private static String convertSnakeToCamel(String snakeCase) {
         if (snakeCase == null || snakeCase.isEmpty()) return snakeCase;
         String[] words = snakeCase.split("_");
@@ -594,118 +635,4 @@ public class WhiteLabelTool {
 	}
 	
 }
-
-//class WhiteLabel {
-//	private boolean sqlOnly;
-//	private String ticketNo;
-//	private Integer webSiteValue;
-//	private String webSiteName;
-//	private String cert;
-//	private boolean apiWhiteLabel;
-//	private boolean newGroup;
-//	private String group;
-//	private String url;
-//	@JsonProperty("groupInfo")
-//	private GroupInfo groupInfo;
-//	// Getters and Setters
-//	public String getTicketNo() { return ticketNo; }
-//	public void setTicketNo(String ticketNo) { this.ticketNo = ticketNo; }
-//
-//	public Integer getWebSiteValue() { return webSiteValue; }
-//	public void setWebSiteValue(Integer webSiteValue) { this.webSiteValue = webSiteValue; }
-//
-//	public String getWebSiteName() { return webSiteName; }
-//	public void setWebSiteName(String webSiteName) { this.webSiteName = webSiteName; }
-//
-//	public String getCert() { return cert; }
-//	public void setCert(String cert) { this.cert = cert; }
-//
-//	public boolean isApiWhiteLabel() { return apiWhiteLabel; }
-//	public void setApiWhiteLabel(boolean apiWhiteLabel) { this.apiWhiteLabel = apiWhiteLabel; }
-//
-//	public boolean isNewGroup() { return newGroup; }
-//	public void setNewGroup(boolean newGroup) { this.newGroup = newGroup; }
-//
-//	public String getGroup() { return group; }
-//	public void setGroup(String group) { this.group = group; }
-//
-//	public String getUrl() { return url; }
-//	public void setUrl(String url) { this.url = url; }
-//
-//	public boolean isSqlOnly() { return sqlOnly; }
-//	public void setSqlOnly(boolean sqlOnly) { this.sqlOnly = sqlOnly; }
-//
-//	public GroupInfo getGroupInfo() {
-//		return groupInfo;
-//	}
-//
-//	public void setGroupInfo(GroupInfo groupInfo) {
-//		this.groupInfo = groupInfo;
-//	}
-//
-//	@java.lang.Override
-//	public java.lang.String toString() {
-//		return "WhiteLabel{" + "sqlOnly=" + sqlOnly + ", ticketNo='" + ticketNo + '\'' + ", webSiteValue=" + webSiteValue + ", webSiteName='"
-//			+ webSiteName + '\'' + ", cert='" + cert + '\'' + ", apiWhiteLabel=" + apiWhiteLabel + ", newGroup=" + newGroup + ", group='" + group
-//			+ '\'' + ", url='" + url + '\'' + ", groupInfo=" + groupInfo + '}';
-//	}
-//
-//	static class GroupInfo {
-//		private String privateIpSetId;
-//		@JsonProperty("privateIp")
-//		private List<String> privateIp;
-//		@JsonProperty("bkIpSetId")
-//		private List<String> bkIpSetId;
-//		private String apiInfoBkIpSetId;
-//		@JsonProperty("backup")
-//		private List<String> backup;
-//
-//		public String getPrivateIpSetId() {
-//			return privateIpSetId;
-//		}
-//
-//		public void setPrivateIpSetId(String privateIpSetId) {
-//			this.privateIpSetId = privateIpSetId;
-//		}
-//
-//		public List<String> getPrivateIp() {
-//			return privateIp;
-//		}
-//
-//		public void setPrivateIp(List<String> privateIp) {
-//			this.privateIp = privateIp;
-//		}
-//
-//		public List<String> getBkIpSetId() {
-//			return bkIpSetId;
-//		}
-//
-//		public void setBkIpSetId(List<String> bkIpSetId) {
-//			this.bkIpSetId = bkIpSetId;
-//		}
-//
-//		public String getApiInfoBkIpSetId() {
-//			return apiInfoBkIpSetId;
-//		}
-//
-//		public void setApiInfoBkIpSetId(String apiInfoBkIpSetId) {
-//			this.apiInfoBkIpSetId = apiInfoBkIpSetId;
-//		}
-//
-//		public List<String> getBackup() {
-//			return backup;
-//		}
-//
-//		public void setBackup(List<String> backup) {
-//			this.backup = backup;
-//		}
-//
-//		@java.lang.Override
-//		public java.lang.String toString() {
-//			return "GroupInfo{" + "privateIpSetId='" + privateIpSetId + '\'' + ", privateIp=" + privateIp + ", bkIpSetId='" + bkIpSetId + '\''
-//				+ ", apiInfoBkIpSetId='" + apiInfoBkIpSetId + '\'' + ", backup=" + backup + '}';
-//		}
-//
-//	}
-//}
 

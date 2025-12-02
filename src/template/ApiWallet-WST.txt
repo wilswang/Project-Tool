@@ -1,7 +1,7 @@
 
 {$webSiteName}({$webSiteValue}, "{$webSiteName}", "{$webSiteName}", WicketsProDomainType.class, WicketsProCountryType.class, {$className}WebSitePage.class) {
 		
-	protected final Set<String> certCodeSet = new HashSet<>(Collections.singletonList("$cert"));
+	protected final Set<String> certCodeSet = new HashSet<>(Collections.singletonList("{$cert}"));
 	protected final ApiAction apiAction = null;
 
 	@Override

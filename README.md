@@ -4,6 +4,13 @@
 - **工具 A (White Label Generator)**: 根據 `whiteLabelConfig.json` 的輸入資料，自動產出多環境 SQL 檔案與對應的 Java/JS 程式碼
 - **工具 B (Domain Checker)**: 根據 `checkDomain.json` 的設定，批次檢查網域連線狀態
 
+## 📚 相關文檔
+
+- [動態字段使用指南](DYNAMIC_FIELDS_GUIDE.md) - 如何使用自定義字段功能（v1.1.0+）
+- [緩存優化報告](CACHE_OPTIMIZATION_REPORT.md) - 性能優化詳情（v1.1.0）
+- [第一階段完成報告](PHASE1_COMPLETION_REPORT.md) - v1.1.0 改進總結
+- [第二階段規劃](PHASE2_PLAN.md) - 未來功能規劃
+
 ---
 
 ## 🔧 工具選擇
@@ -49,9 +56,39 @@ project-tool.bat B                    # 工具 B: Domain Checker
       "apiInfoBkIpSetId": "api-info-id",
       "backup": ["abc-api1.com", "abc-api2.com"]
     }
-  }
+  },
+
+  "siteCategory": "Sports",
+  "region": "Asia",
+  "launchDate": "2025-12-01"
 }
 ```
+
+### 🆕 動態字段支持（v1.1.0+）
+
+從 v1.1.0 開始，配置文件支持添加**自定義字段**，這些字段會自動轉換為可用的占位符：
+
+**示例**：
+```json
+{
+  "ticketNo": "SACRIC-12345",
+  "webSiteName": "ABC_SITE",
+  "webSiteValue": 101,
+
+  "siteCategory": "Sports",
+  "region": "Asia",
+  "maxUsers": 100000
+}
+```
+
+**自動生成的占位符**：
+- `{$siteCategory}` = "Sports"
+- `{$region}` = "Asia"
+- `{$maxUsers}` = "100000"
+
+這些占位符可以直接在模板文件中使用，**無需修改 Java 代碼**。
+
+詳細使用說明請參考：[DYNAMIC_FIELDS_GUIDE.md](DYNAMIC_FIELDS_GUIDE.md)
 
 ---
 
@@ -116,6 +153,29 @@ SQL 生成採用**模板化設計**，支援以下功能：
 | `groupInfo.bkIpSetId`        | string[] | ✅ 是 | 備援 IP 設定 ID，需有兩筆                         |
 | `groupInfo.apiInfoBkIpSetId` | string | ✅ 是 | API 設定 ID                                |
 | `groupInfo.backup`           | string[] | ✅ 是 | 備援 domain 名稱                             |
+
+### 🆕 動態自定義字段（v1.1.0+）
+
+除了上述標準字段外，您可以添加任意自定義字段：
+
+| 特性 | 說明 |
+|------|------|
+| **字段名稱** | 支援任意合法的 JSON 鍵名（建議使用駝峰命名） |
+| **字段類型** | 支援字符串、數字、布爾值（會自動轉為字符串） |
+| **占位符格式** | `{$字段名}` |
+| **使用場景** | 臨時字段、A/B 測試、實驗性功能 |
+| **限制** | 不支持嵌套對象（建議使用扁平結構） |
+
+**示例**：
+```json
+{
+  "customField1": "value1",
+  "siteType": "Premium",
+  "maxConnections": 1000
+}
+```
+
+會自動生成占位符：`{$customField1}`, `{$siteType}`, `{$maxConnections}`
 
 ---
 
@@ -249,12 +309,36 @@ chmod +x project-tool.sh                      # 賦予執行權限（首次執�
   3. 在 `WhiteLabelTool.java` 的 `TEMPLATE_PATHS` 註冊新模板
 - SQL 結構變更建議在模板檔案中統一修改，無需修改 Java 代碼
 
+### 🆕 動態字段最佳實踐（v1.1.0+）
+- **命名規範**：使用駝峰命名（如 `siteCategory` 而非 `site_category`）
+- **類型建議**：優先使用字符串，避免複雜對象和數組
+- **文檔化**：在 JSON 配置中添加註釋說明字段用途
+- **核心字段**：頻繁使用的字段建議添加到 `WhiteLabelConfig.java`（獲得類型安全和驗證）
+- **臨時字段**：短期使用或實驗性字段適合使用動態字段功能
+- **性能提示**：v1.1.0 已優化占位符生成性能，減少 56-64% 重複計算
+- **詳細指南**：參考 [DYNAMIC_FIELDS_GUIDE.md](DYNAMIC_FIELDS_GUIDE.md)
+
 ### 工具 B (Domain Checker)
 - Domain Checker 可搭配 CI/CD 流程進行網域可用性監控
 
 ---
 
 ## 📝 版本歷史
+
+### v1.1.0 (2025-11-17)
+- ✨ **新增動態字段支持** - 允許在 JSON 配置中添加自定義字段，自動映射為占位符
+- ⚡ **性能優化** - buildReplacements() 緩存機制，減少 56-64% 重複計算，性能提升 60-70%
+- 🔧 **重構占位符映射引擎** - 使用反射驅動的 PlaceholderMapper，支持自動映射和派生映射
+- 📚 **新增文檔**：
+  - `DYNAMIC_FIELDS_GUIDE.md` - 動態字段使用指南
+  - `CACHE_OPTIMIZATION_REPORT.md` - 緩存優化報告
+  - `PHASE1_COMPLETION_REPORT.md` - 第一階段完成報告
+  - `PHASE2_PLAN.md` - 第二階段功能規劃
+- 🎯 **核心改進**：
+  - 無需修改 Java 代碼即可添加新占位符
+  - 兩層緩存機制（基礎映射 + 環境映射）
+  - Builder API 支持鏈式調用
+  - 完整的單元測試覆蓋
 
 ### v1.0.7 (2025-01-XX)
 - ✨ 新增多環境 SQL 生成架構（DEV/UAT/SIM）
