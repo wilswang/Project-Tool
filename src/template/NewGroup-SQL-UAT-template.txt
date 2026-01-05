@@ -8,11 +8,20 @@ INSERT INTO apidomainname
   (id, groupname, name, isactive, priority, remark, apidomaintype, updatedate, createdate)
 VALUES {$apiDomainValues}
 
+-- 包含一般白牌domain及API白牌的public domain
 INSERT INTO corsdomain (name, isactive, subdomainstatic, subdomainapi, createdate, updatedate)
 values {$corsDomainValues}
 
+-- 白牌開關by domain (包含一般白牌domain、API白牌的private及public domain) (加入 API private domain是因為/queryDomain API會檢查此setting)
 UPDATE systemsetting
 set updatedate = sysdate(6)
   , jsonvalue  = JSON_MERGE(jsonvalue, '{ {$enableFrontendBackendSeparationByDomainValues}
 }')
 where syskey = 'EnableFrontendBackendSeparationByDomain';
+
+-- 白牌開關by domain (包含一般白牌domain、API白牌的public domain)
+UPDATE systemsetting
+set updatedate = sysdate(6)
+  , jsonvalue  = JSON_MERGE(jsonvalue, '{ {$enableDesktopFrontendBackendSeparationByDomainValues}
+}')
+where syskey = 'EnableDesktopFrontendBackendSeparationByDomain';

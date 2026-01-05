@@ -1,8 +1,9 @@
 # Project Tool 工具說明
 
-這是一個多功能 Java 工具集，包含兩個主要功能：
+這是一個多功能 Java 工具集，包含三個主要功能：
 - **工具 A (White Label Generator)**: 根據 `whiteLabelConfig.json` 的輸入資料，自動產出多環境 SQL 檔案與對應的 Java/JS 程式碼
 - **工具 B (Domain Checker)**: 根據 `checkDomain.json` 的設定，批次檢查網域連線狀態
+- **工具 C (Jira Tool)**: Jira API 整合工具，支援 issue 查詢、留言、狀態轉換等操作
 
 ## 📚 相關文檔
 
@@ -21,12 +22,14 @@
 # Windows
 project-tool.bat A <configFilePath>   # 工具 A: White Label Generator
 project-tool.bat B                    # 工具 B: Domain Checker
+# 工具 C 使用 java -jar 直接執行，詳見下方說明
 ```
 
 ```bash
 # Mac / Linux
 ./project-tool.sh A <configFilePath>  # 工具 A: White Label Generator
 ./project-tool.sh B                   # 工具 B: Domain Checker
+# 工具 C 使用 java -jar 直接執行，詳見下方說明
 ```
 
 ---
@@ -284,6 +287,147 @@ chmod +x project-tool.sh                      # 賦予執行權限（首次執�
 
 ---
 
+## 🎫 工具 C: Jira Tool
+
+Jira Tool 是一個命令列工具，用於與 Jira REST API 互動，支援以下功能：
+
+### ✨ 主要功能
+
+1. **Issue 查詢** - 取得 issue 的詳細資訊
+2. **留言管理** - 取得和新增 issue 留言
+3. **狀態轉換** - 轉換 issue 狀態（支援自動驗證）
+4. **開發流程** - 一鍵啟動 issue 開發流程
+5. **JQL 搜尋** - 使用 JQL 進行進階搜尋
+
+### 📋 使用方式
+
+```bash
+# 執行 JiraTool
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool <command> [arguments] [options]
+
+# 顯示說明
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool --help
+```
+
+### 🔧 可用命令
+
+#### 1. get-issue - 取得 Issue 資訊
+```bash
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool get-issue <issueKey>
+
+# 範例
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool get-issue SACRIC-1020
+```
+
+#### 2. get-comments - 取得 Issue 留言
+```bash
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool get-comments <issueKey>
+
+# 範例
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool get-comments SACRIC-1020
+```
+
+#### 3. get-transitions - 取得可用的狀態轉換選項
+```bash
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool get-transitions <issueKey>
+
+# 範例
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool get-transitions SACRIC-1020
+```
+
+#### 4. post-comment - 新增留言
+```bash
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool post-comment <issueKey> <commentText> [options]
+
+# 範例
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool post-comment SACRIC-1020 "This is a comment"
+
+# 測試模式（不實際發送）
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool post-comment SACRIC-1020 "Test comment" -t
+```
+
+#### 5. transition-issue - 轉換 Issue 狀態
+```bash
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool transition-issue <issueKey> <transitionKey> [options]
+
+# 範例
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool transition-issue SACRIC-1020 TO_DEV
+
+# 測試模式
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool transition-issue SACRIC-1020 TO_DEV --testMode
+```
+
+**可用的 Transition Keys**:
+- `OPEN` (41) - Not Start Yet
+- `REJECT_1` (301) - IN ANALYSIS
+- `TO_DEV` (101) - IN DEV
+- `REJECT` (111) - Ready to DEV
+- `DEV_DONE` (121) - DEV DONE
+- `RESOLVED` (221) - Resolved
+
+**✅ 自動驗證功能**: 在執行 transition 前，會自動檢查 transition ID 是否有效，避免執行無效的狀態轉換。
+
+#### 6. start-jira-issue - 啟動開發流程
+```bash
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool start-jira-issue <issueKey> [options]
+
+# 範例
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool start-jira-issue SACRIC-1020
+
+# 測試模式（跳過狀態檢查和轉換）
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool start-jira-issue SACRIC-1020 -t
+```
+
+**執行步驟**:
+1. **Step 1**: 檢查 issue 狀態是否為 "Ready to DEV"
+2. **Step 2**: 將狀態轉換為 "IN DEV"（包含 transition ID 驗證）
+3. **Step 3**: 取得 issue 詳細資訊並儲存至 `./result/jira/{issueKey}-jira.txt`
+
+#### 7. enhanced-search - JQL 進階搜尋
+```bash
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool enhanced-search [templatePath]
+
+# 範例
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool enhanced-search
+java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool enhanced-search my-search.json
+```
+
+### ⚙️ 配置檔案
+
+JiraTool 需要 `application.properties` 配置檔案，包含以下設定：
+
+```properties
+jira.base.url=https://your-domain.atlassian.net
+jira.auth.email=your-email@example.com
+jira.auth.token=your-api-token
+```
+
+### 📁 輸出檔案結構
+
+執行 `start-jira-issue` 命令後，會在以下位置產生輸出檔案：
+
+```
+result/
+└── jira/
+    ├── SACRIC-1020-jira.txt    # Issue 詳細資訊（JSON 格式）
+    └── SACRIC-1021-jira.txt
+```
+
+### 🎯 測試模式
+
+所有支援的命令都可以使用測試模式：
+- 使用 `-t` 或 `--testMode` 參數
+- 測試模式下會顯示 Jira Config 資訊
+- 部分操作會跳過實際的 API 調用
+
+### 🔒 安全性
+
+- 使用 Jira API Token 進行認證（Basic Auth）
+- Token 在顯示時會自動遮罩（只顯示前後 10 個字元）
+- 支援 HTTPS 連線
+
+---
+
 ## 🔍 驗證與容錯
 
 ### 工具 A (White Label Generator)
@@ -295,6 +439,12 @@ chmod +x project-tool.sh                      # 賦予執行權限（首次執�
 - 自動檢查 `domainList` 是否為空
 - 支援逾時設定，避免無限等待
 - 提供連線狀態回饋（✅ 200 OK / ❌ 錯誤碼 / ⚠️ 連線失敗）
+
+### 工具 C (Jira Tool)
+- **Transition ID 自動驗證**: 執行狀態轉換前會先檢查 transition ID 是否有效
+- **重複留言檢查**: 新增留言前會檢查是否已存在相同內容
+- **錯誤處理**: 提供清楚的錯誤訊息和可用選項列表
+- **輸出格式**: 所有輸出訊息為英文，保持一致性
 
 ---
 
@@ -321,9 +471,33 @@ chmod +x project-tool.sh                      # 賦予執行權限（首次執�
 ### 工具 B (Domain Checker)
 - Domain Checker 可搭配 CI/CD 流程進行網域可用性監控
 
+### 工具 C (Jira Tool)
+- **配置管理**: 使用 `application.properties` 集中管理 Jira 連線資訊
+- **測試模式**: 開發和測試時使用 `-t` 參數避免實際修改 Jira 資料
+- **檔案輸出**: `start-jira-issue` 會將 issue 資訊儲存至 `./result/jira/` 目錄，便於後續處理
+- **API 整合**: 可作為 CI/CD 流程的一部分，自動化 issue 管理
+- **擴展性**: 新增 transition 狀態時只需修改 `JiraTransitionId` enum
+
 ---
 
 ## 📝 版本歷史
+
+### v1.2.1 (2025-12-04)
+- ✨ **新增 Jira Tool (工具 C)** - 完整的 Jira API 整合工具
+  - 支援 issue 查詢、留言管理、狀態轉換、JQL 搜尋
+  - `start-jira-issue` 命令啟動完整開發流程
+  - Transition ID 自動驗證機制
+  - 測試模式支援（`-t` / `--testMode`）
+- 🌍 **所有輸出訊息英文化**
+  - JiraTool: 所有命令列輸出改為英文
+  - WhiteLabelTool: 所有 System.out.println 輸出改為英文
+  - 保留 emoji 和中文註解
+- 💾 **檔案輸出優化**
+  - `start-jira-issue` Step 3 將 issue 資訊儲存至 `./result/jira/{issueKey}-jira.txt`
+  - 自動建立輸出目錄
+- 🔧 **程式碼優化**
+  - 重構 `startJiraIssue` 使用統一的 `handleTransitionIssue` 方法
+  - 移除重複代碼，提升可維護性
 
 ### v1.1.0 (2025-11-17)
 - ✨ **新增動態字段支持** - 允許在 JSON 配置中添加自定義字段，自動映射為占位符

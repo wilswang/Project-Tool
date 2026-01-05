@@ -1,0 +1,15 @@
+{
+	"jql": "key in ({$issueList}})",
+	"expand":"names",
+	"fields": [
+		"id",
+		"key",
+		"assignee",
+		"fixVersions",
+		"status",
+		"customfield_10072",
+		"description",
+		"summary",
+		"customfield_10037"
+	]
+}
