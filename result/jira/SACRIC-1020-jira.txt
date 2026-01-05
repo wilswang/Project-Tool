@@ -1,0 +1,867 @@
+{
+  "expand" : "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+  "id" : "57658",
+  "self" : "https://neutec.atlassian.net/rest/api/3/issue/57658",
+  "key" : "SACRIC-1020",
+  "fields" : {
+    "summary" : "[ApiWallet][TransferWallet] PKW",
+    "description" : {
+      "type" : "doc",
+      "version" : 1,
+      "content" : [ {
+        "type" : "heading",
+        "attrs" : {
+          "level" : 2
+        },
+        "content" : [ {
+          "type" : "text",
+          "text" : "目的"
+        } ]
+      }, {
+        "type" : "paragraph",
+        "content" : [ {
+          "type" : "text",
+          "text" : "-新增 API 網站 PKW"
+        } ]
+      }, {
+        "type" : "heading",
+        "attrs" : {
+          "level" : 2
+        },
+        "content" : [ {
+          "type" : "text",
+          "text" : "範圍"
+        } ]
+      }, {
+        "type" : "orderedList",
+        "attrs" : {
+          "order" : 1
+        },
+        "content" : [ {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "[ApiWallet][TransferWallet] PKW"
+            } ]
+          } ]
+        } ]
+      }, {
+        "type" : "orderedList",
+        "attrs" : {
+          "order" : 2
+        },
+        "content" : [ {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "Desktop / Mobile"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "OP > System > SportBook PT Setting"
+            } ]
+          } ]
+        } ]
+      }, {
+        "type" : "heading",
+        "attrs" : {
+          "level" : 2
+        },
+        "content" : [ {
+          "type" : "text",
+          "text" : "說明"
+        } ]
+      }, {
+        "type" : "heading",
+        "attrs" : {
+          "level" : 3
+        },
+        "content" : [ {
+          "type" : "text",
+          "text" : "功能說明"
+        } ]
+      }, {
+        "type" : "orderedList",
+        "attrs" : {
+          "order" : 1
+        },
+        "content" : [ {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "CSS Style :  "
+            }, {
+              "type" : "text",
+              "text" : "9wickets.pro",
+              "marks" : [ {
+                "type" : "link",
+                "attrs" : {
+                  "href" : "http://9wickets.pro/"
+                }
+              }, {
+                "type" : "underline"
+              } ]
+            }, {
+              "type" : "text",
+              "text" : " 公版"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "Currency : INR"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "Fancy Bet : Yes"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "SportsBook : Yes"
+            } ]
+          }, {
+            "type" : "orderedList",
+            "attrs" : {
+              "order" : 1
+            },
+            "content" : [ {
+              "type" : "listItem",
+              "content" : [ {
+                "type" : "paragraph",
+                "content" : [ {
+                  "type" : "text",
+                  "text" : "預設須開啟Genius Sports",
+                  "marks" : [ {
+                    "type" : "textColor",
+                    "attrs" : {
+                      "color" : "#ff5630"
+                    }
+                  } ]
+                } ]
+              } ]
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "Election : NO"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "Politics : NO"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "Yuvi Game  : NO"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "LUCKCO7 : Yes"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "One click bet setting : Normal"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "Bet limit time : applyBetLimitTime 及 applyDisableBetting 皆需為on (需受到skyinplay control bet limit限制)"
+            } ]
+          }, {
+            "type" : "mediaSingle",
+            "attrs" : {
+              "layout" : "center"
+            },
+            "content" : [ {
+              "type" : "media",
+              "attrs" : {
+                "type" : "file",
+                "id" : "67b54b0e-23ee-422f-a5cd-48c71e476f0d",
+                "collection" : "",
+                "height" : 186,
+                "width" : 1170
+              }
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "Market Low Liquidity : 所有sports 設定2萬U"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "Live match tracker default "
+            }, {
+              "type" : "text",
+              "text" : "ON",
+              "marks" : [ {
+                "type" : "strong"
+              } ]
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "Player 請隱藏 Logout 功能及 Profile 頁面底下所有的 Edit 功能"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "Player Need Login: off"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "API串接廠商, MA Level 隱藏 Banking 頁面及 Add player button, Player Profit 頁面請隱藏 Edit"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "OP > Management > Modify Mail Info 需要有可以設定Refunded/Resettle Notification"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "OP > System > Web Site Group Update > WebSiteGroup: WICKESPRO, default 勾起",
+              "marks" : [ {
+                "type" : "strong"
+              } ]
+            }, {
+              "type" : "text",
+              "text" : " PKW"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "15. Display Name in OP system :",
+              "marks" : [ {
+                "type" : "strong"
+              } ]
+            }, {
+              "type" : "text",
+              "text" : " PKW"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "API 2.0 Group : C03"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "OP > System > SportBook PT Setting (僅影響Sportdar Sportbook)"
+            } ]
+          }, {
+            "type" : "orderedList",
+            "attrs" : {
+              "order" : 1
+            },
+            "content" : [ {
+              "type" : "listItem",
+              "content" : [ {
+                "type" : "paragraph",
+                "content" : [ {
+                  "type" : "text",
+                  "text" : "Sportsradar SportradarFeedingStakeRatio=1"
+                } ]
+              } ]
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "API URL :"
+            } ]
+          }, {
+            "type" : "orderedList",
+            "attrs" : {
+              "order" : 1
+            },
+            "content" : [ {
+              "type" : "listItem",
+              "content" : [ {
+                "type" : "paragraph",
+                "content" : [ {
+                  "type" : "text",
+                  "text" : "UAT :"
+                }, {
+                  "type" : "hardBreak"
+                }, {
+                  "type" : "text",
+                  "text" : "Player (API 2.0)"
+                }, {
+                  "type" : "hardBreak"
+                }, {
+                  "type" : "text",
+                  "text" : "https://uat9wapi.qqkk77.net/test/api/testApiWalletExample_bak.jsp",
+                  "marks" : [ {
+                    "type" : "link",
+                    "attrs" : {
+                      "href" : "https://uat9wapi.qqkk77.net/test/api/testApiWalletExample_bak.jsp"
+                    }
+                  } ]
+                }, {
+                  "type" : "text",
+                  "text" : "    "
+                } ]
+              }, {
+                "type" : "paragraph",
+                "content" : [ {
+                  "type" : "text",
+                  "text" : "Apiinfo"
+                }, {
+                  "type" : "hardBreak"
+                }, {
+                  "type" : "text",
+                  "text" : "https://apiinfo.qqkk77.net/test/api/testApiWalletExample_bak.jsp",
+                  "marks" : [ {
+                    "type" : "link",
+                    "attrs" : {
+                      "href" : "https://apiinfo.qqkk77.net/test/api/testApiWalletExample_bak.jsp"
+                    }
+                  } ]
+                }, {
+                  "type" : "text",
+                  "text" : "  "
+                } ]
+              } ]
+            }, {
+              "type" : "listItem",
+              "content" : [ {
+                "type" : "paragraph",
+                "content" : [ {
+                  "type" : "text",
+                  "text" : "SIM (API 2.0):"
+                }, {
+                  "type" : "hardBreak"
+                }, {
+                  "type" : "text",
+                  "text" : "Private Domain:"
+                } ]
+              }, {
+                "type" : "orderedList",
+                "attrs" : {
+                  "order" : 1
+                },
+                "content" : [ {
+                  "type" : "listItem",
+                  "content" : [ {
+                    "type" : "paragraph",
+                    "content" : [ {
+                      "type" : "text",
+                      "text" : "prc03sr0101.xyz"
+                    } ]
+                  } ]
+                }, {
+                  "type" : "listItem",
+                  "content" : [ {
+                    "type" : "paragraph",
+                    "content" : [ {
+                      "type" : "text",
+                      "text" : "prc03sr0102.space"
+                    } ]
+                  } ]
+                } ]
+              }, {
+                "type" : "paragraph",
+                "content" : [ {
+                  "type" : "text",
+                  "text" : "Player:"
+                }, {
+                  "type" : "hardBreak"
+                }, {
+                  "type" : "text",
+                  "text" : "  "
+                }, {
+                  "type" : "text",
+                  "text" : "https://www.w2i4ckets.xyz",
+                  "marks" : [ {
+                    "type" : "link",
+                    "attrs" : {
+                      "href" : "https://www.w2i4ckets.xyz"
+                    }
+                  } ]
+                } ]
+              }, {
+                "type" : "paragraph",
+                "content" : [ {
+                  "type" : "text",
+                  "text" : "Exchangehost:"
+                }, {
+                  "type" : "hardBreak"
+                }, {
+                  "type" : "text",
+                  "text" : "  "
+                }, {
+                  "type" : "text",
+                  "text" : "https://{exchangehost}/apiWallet/player/{website}/login",
+                  "marks" : [ {
+                    "type" : "link",
+                    "attrs" : {
+                      "href" : "https://%7Bexchangehost%7D/apiWallet/player/%7Bwebsite%7D/login"
+                    }
+                  } ]
+                } ]
+              }, {
+                "type" : "paragraph",
+                "content" : [ {
+                  "type" : "text",
+                  "text" : "apiServerHost:"
+                }, {
+                  "type" : "hardBreak"
+                }, {
+                  "type" : "text",
+                  "text" : "  "
+                }, {
+                  "type" : "text",
+                  "text" : "https://{apiServerHost}/api/apiWallet/{website}/getkey",
+                  "marks" : [ {
+                    "type" : "link",
+                    "attrs" : {
+                      "href" : "https://%7BapiServerHost%7D/api/apiWallet/%7Bwebsite%7D/getkey"
+                    }
+                  } ]
+                } ]
+              } ]
+            }, {
+              "type" : "listItem",
+              "content" : [ {
+                "type" : "paragraph",
+                "content" : [ {
+                  "type" : "text",
+                  "text" : "詳細網域配置請參考以下連結："
+                }, {
+                  "type" : "hardBreak"
+                }, {
+                  "type" : "text",
+                  "text" : "  "
+                }, {
+                  "type" : "inlineCard",
+                  "attrs" : {
+                    "url" : "https://docs.google.com/spreadsheets/d/1tss__EJf2s8U3T6UIIzbFvDEn_GtCqisSpSgOhYfptA/edit?gid=2074431003#gid=2074431003"
+                  }
+                }, {
+                  "type" : "text",
+                  "text" : " "
+                } ]
+              } ]
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "API Agent URL  "
+            } ]
+          }, {
+            "type" : "orderedList",
+            "attrs" : {
+              "order" : 1
+            },
+            "content" : [ {
+              "type" : "listItem",
+              "content" : [ {
+                "type" : "paragraph",
+                "content" : [ {
+                  "type" : "text",
+                  "text" : "UAT :  "
+                }, {
+                  "type" : "text",
+                  "text" : "https://agtest81.cckk77.net/agent/PKW",
+                  "marks" : [ {
+                    "type" : "link",
+                    "attrs" : {
+                      "href" : "https://agtest81.cckk77.net/agent/PKW"
+                    }
+                  } ]
+                }, {
+                  "type" : "text",
+                  "text" : "    "
+                } ]
+              } ]
+            }, {
+              "type" : "listItem",
+              "content" : [ {
+                "type" : "paragraph",
+                "content" : [ {
+                  "type" : "text",
+                  "text" : "SIM(API 2.0):  "
+                }, {
+                  "type" : "text",
+                  "text" : "https://ag.w2i4ckets.xyz/agent/PKW",
+                  "marks" : [ {
+                    "type" : "link",
+                    "attrs" : {
+                      "href" : "https://ag.w2i4ckets.xyz/agent/PKW"
+                    }
+                  } ]
+                } ]
+              } ]
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "程式: 參考此份文件 "
+            } ]
+          }, {
+            "type" : "orderedList",
+            "attrs" : {
+              "order" : 1
+            },
+            "content" : [ {
+              "type" : "listItem",
+              "content" : [ {
+                "type" : "paragraph",
+                "content" : [ {
+                  "type" : "text",
+                  "text" : "WebSiteType"
+                }, {
+                  "type" : "hardBreak"
+                }, {
+                  "type" : "text",
+                  "text" : "PKW (WebSite編號, \"PKW\", \"PKW\", WicketsProDomainType.class, WicketsProCountryType.class, WicketsProWebSitePage.class)"
+                } ]
+              } ]
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "Cert Code產生方式 :"
+            } ]
+          }, {
+            "type" : "orderedList",
+            "attrs" : {
+              "order" : 1
+            },
+            "content" : [ {
+              "type" : "listItem",
+              "content" : [ {
+                "type" : "paragraph",
+                "content" : [ {
+                  "type" : "text",
+                  "text" : "使用此網址 拿取16位隨機碼 "
+                }, {
+                  "type" : "inlineCard",
+                  "attrs" : {
+                    "url" : "https://www.random.org/strings/?num=10&len=16&digits=on&upperalpha=on&loweralpha=on&unique=on&format=html&rnd=new"
+                  }
+                }, {
+                  "type" : "text",
+                  "text" : " "
+                } ]
+              } ]
+            }, {
+              "type" : "listItem",
+              "content" : [ {
+                "type" : "paragraph",
+                "content" : [ {
+                  "type" : "text",
+                  "text" : "搜尋此隨機碼是否在此 WebSiteType 是否有使用過，如無即可使用"
+                }, {
+                  "type" : "hardBreak"
+                } ]
+              } ]
+            } ]
+          } ]
+        } ]
+      }, {
+        "type" : "heading",
+        "attrs" : {
+          "level" : 3
+        },
+        "content" : [ {
+          "type" : "text",
+          "text" : "預期效果以及畫面"
+        } ]
+      }, {
+        "type" : "paragraph",
+        "content" : [ {
+          "type" : "text",
+          "text" : "-"
+        } ]
+      }, {
+        "type" : "heading",
+        "attrs" : {
+          "level" : 3
+        },
+        "content" : [ {
+          "type" : "text",
+          "text" : "報表異動"
+        } ]
+      }, {
+        "type" : "paragraph",
+        "content" : [ {
+          "type" : "text",
+          "text" : "-"
+        } ]
+      }, {
+        "type" : "heading",
+        "attrs" : {
+          "level" : 3
+        },
+        "content" : [ {
+          "type" : "text",
+          "text" : "API 異動"
+        } ]
+      }, {
+        "type" : "paragraph",
+        "content" : [ {
+          "type" : "text",
+          "text" : "-"
+        } ]
+      }, {
+        "type" : "heading",
+        "attrs" : {
+          "level" : 3
+        },
+        "content" : [ {
+          "type" : "text",
+          "text" : "企劃書連結"
+        } ]
+      }, {
+        "type" : "paragraph",
+        "content" : [ {
+          "type" : "text",
+          "text" : "-"
+        } ]
+      }, {
+        "type" : "heading",
+        "attrs" : {
+          "level" : 3
+        },
+        "content" : [ {
+          "type" : "text",
+          "text" : "相關文件附件"
+        } ]
+      }, {
+        "type" : "paragraph",
+        "content" : [ {
+          "type" : "text",
+          "text" : "-"
+        } ]
+      }, {
+        "type" : "heading",
+        "attrs" : {
+          "level" : 3
+        },
+        "content" : [ {
+          "type" : "text",
+          "text" : "條件"
+        } ]
+      }, {
+        "type" : "heading",
+        "attrs" : {
+          "level" : 2
+        },
+        "content" : [ {
+          "type" : "text",
+          "text" : "其他事項"
+        } ]
+      }, {
+        "type" : "bulletList",
+        "content" : [ {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "負責 UI/Release 時間：-"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "請提供 Site, Cert, Websit type在comments中"
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "不是Skyexchange Group(Hari)的",
+              "marks" : [ {
+                "type" : "strong"
+              } ]
+            } ]
+          } ]
+        }, {
+          "type" : "listItem",
+          "content" : [ {
+            "type" : "paragraph",
+            "content" : [ {
+              "type" : "text",
+              "text" : "Rachel.Kao",
+              "marks" : [ {
+                "type" : "link",
+                "attrs" : {
+                  "href" : "http://nt-jira.neutec.com.tw:8080/secure/ViewProfile.jspa?name=rachel"
+                }
+              } ]
+            } ]
+          } ]
+        } ]
+      } ]
+    },
+    "assignee" : {
+      "self" : "https://neutec.atlassian.net/rest/api/3/user?accountId=60cff97c2bd2140069601e79",
+      "accountId" : "60cff97c2bd2140069601e79",
+      "emailAddress" : "vincent.yeh@neutec.com.tw",
+      "avatarUrls" : {
+        "48x48" : "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/60cff97c2bd2140069601e79/bef6b9e9-3d7e-4fd1-8a1f-895131a2122a/48",
+        "24x24" : "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/60cff97c2bd2140069601e79/bef6b9e9-3d7e-4fd1-8a1f-895131a2122a/24",
+        "16x16" : "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/60cff97c2bd2140069601e79/bef6b9e9-3d7e-4fd1-8a1f-895131a2122a/16",
+        "32x32" : "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/60cff97c2bd2140069601e79/bef6b9e9-3d7e-4fd1-8a1f-895131a2122a/32"
+      },
+      "displayName" : "Vincent.Yeh",
+      "active" : true,
+      "timeZone" : "Asia/Taipei",
+      "accountType" : "atlassian"
+    },
+    "fixVersions" : [ {
+      "self" : "https://neutec.atlassian.net/rest/api/3/version/16424",
+      "id" : "16424",
+      "description" : "",
+      "name" : "Patch 4.13.0",
+      "archived" : false,
+      "released" : false,
+      "releaseDate" : "2025-12-03"
+    } ],
+    "customfield_10072" : [ {
+      "self" : "https://neutec.atlassian.net/rest/api/3/user?accountId=60cff97c2bd2140069601e79",
+      "accountId" : "60cff97c2bd2140069601e79",
+      "emailAddress" : "vincent.yeh@neutec.com.tw",
+      "avatarUrls" : {
+        "48x48" : "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/60cff97c2bd2140069601e79/bef6b9e9-3d7e-4fd1-8a1f-895131a2122a/48",
+        "24x24" : "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/60cff97c2bd2140069601e79/bef6b9e9-3d7e-4fd1-8a1f-895131a2122a/24",
+        "16x16" : "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/60cff97c2bd2140069601e79/bef6b9e9-3d7e-4fd1-8a1f-895131a2122a/16",
+        "32x32" : "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/60cff97c2bd2140069601e79/bef6b9e9-3d7e-4fd1-8a1f-895131a2122a/32"
+      },
+      "displayName" : "Vincent.Yeh",
+      "active" : true,
+      "timeZone" : "Asia/Taipei",
+      "accountType" : "atlassian"
+    } ],
+    "status" : {
+      "self" : "https://neutec.atlassian.net/rest/api/3/status/10035",
+      "description" : "",
+      "iconUrl" : "https://neutec.atlassian.net/images/icons/statuses/generic.png",
+      "name" : "READY TO SIM",
+      "id" : "10035",
+      "statusCategory" : {
+        "self" : "https://neutec.atlassian.net/rest/api/3/statuscategory/3",
+        "id" : 3,
+        "key" : "done",
+        "colorName" : "green",
+        "name" : "Done"
+      }
+    }
+  }
+}

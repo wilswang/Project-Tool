@@ -42,7 +42,7 @@ public class WhiteLabelTool {
 	private static final String TS_FINANCIAL = "\n@HttpUpdate\n" + "public static boolean ENABLE_TS_FINANCIAL_{$webSiteName} = %s;\n\n";
 	private static final String ELECTION_FANCY_BET = "\n@HttpUpdate\n" + "public static boolean ENABLE_ELECTION_FANCY_BET_{$webSiteName} = %s;\n\n";
 	// apiDomainType 1: public, 0:private
-	private static final List<String> UAT_PUBLIC_DOMAIN_LIST = Arrays.asList("qqkk77.net", "qqkk77.live");
+	private static final List<String> UAT_PUBLIC_DOMAIN_LIST = Arrays.asList("qqkk77.net", "qqkk77.live", "ppkk77.net");
 	private static final List<String> UAT_PRIVATE_DOMAIN_LIST = Arrays.asList("cckk77.net", "cckk77.live");
 	
 	private static final Map<String, String> TEMPLATE_PATHS;
@@ -51,27 +51,27 @@ public class WhiteLabelTool {
 	private static final String WEBSITE_TYPE_PATH = "../src/main/java/com/nv/commons/code/WebSiteType.java";
 	static {
 		Map<String, String> tempMap = new HashMap<>();
-		tempMap.put("DB_01", "./template/NewSite-DB-01-template.txt");
-		tempMap.put("DB_41", "./template/NewSite-DB-41-template.txt");
-		tempMap.put("API_DB_01", "./template/ApiWallet-DB-01-template.txt");
-		tempMap.put("API_DB_41", "./template/ApiWallet-DB-41-template.txt");
-		tempMap.put("DOMAIN_TYPE", "./template/DomainTypeTemplate.txt");
-		tempMap.put("WEB_SITE_PAGE", "./template/WebSitePageTemplate.txt");
-		tempMap.put("API_WALLET_WEB_SITE_PAGE", "./template/ApiWalletWebSitePageTemplate.txt");
-		tempMap.put("NEW_SITE_OTHER", "./template/NewSite-WST.txt");
-		tempMap.put("API_OTHER", "./template/ApiWallet-WST.txt");
-		tempMap.put("UPDATE_GROUP_SQL", "./template/UpdateGroup-SQL-template.txt");
-		tempMap.put("NEW_GROUP_SQL_SIM", "./template/NewGroup-SQL-SIM-template.txt");
-		tempMap.put("NEW_GROUP_SQL_UAT", "./template/NewGroup-SQL-UAT-template.txt");
-		tempMap.put("NEW_GROUP_SQL_DEV", "./template/NewGroup-SQL-DEV-template.txt");
+		tempMap.put("DB_01", "./template/white-label/NewSite-DB-01-template.txt");
+		tempMap.put("DB_41", "./template/white-label/NewSite-DB-41-template.txt");
+		tempMap.put("API_DB_01", "./template/white-label/ApiWallet-DB-01-template.txt");
+		tempMap.put("API_DB_41", "./template/white-label/ApiWallet-DB-41-template.txt");
+		tempMap.put("DOMAIN_TYPE", "./template/white-label/DomainTypeTemplate.txt");
+		tempMap.put("WEB_SITE_PAGE", "./template/white-label/WebSitePageTemplate.txt");
+		tempMap.put("API_WALLET_WEB_SITE_PAGE", "./template/white-label/ApiWalletWebSitePageTemplate.txt");
+		tempMap.put("NEW_SITE_OTHER", "./template/white-label/NewSite-WST.txt");
+		tempMap.put("API_OTHER", "./template/white-label/ApiWallet-WST.txt");
+		tempMap.put("UPDATE_GROUP_SQL", "./template/white-label/UpdateGroup-SQL-template.txt");
+		tempMap.put("NEW_GROUP_SQL_SIM", "./template/white-label/NewGroup-SQL-SIM-template.txt");
+		tempMap.put("NEW_GROUP_SQL_UAT", "./template/white-label/NewGroup-SQL-UAT-template.txt");
+		tempMap.put("NEW_GROUP_SQL_DEV", "./template/white-label/NewGroup-SQL-DEV-template.txt");
 
 		TEMPLATE_PATHS = Collections.unmodifiableMap(tempMap);
 	}
 	
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.err.println("請提供配置檔案路徑作為參數");
-            System.err.println("使用方式: java WhiteLabelTool <configFilePath>");
+            System.err.println("Please provide config file path as argument");
+            System.err.println("Usage: java WhiteLabelTool <configFilePath>");
             System.exit(1);
         }
 
@@ -98,7 +98,7 @@ public class WhiteLabelTool {
 				insertIntoJava(whiteLabelConfig);
 			}
         } catch (IOException e) {
-            System.err.println("處理 JSON 檔案時發生錯誤: " + e.getMessage());
+            System.err.println("Error processing JSON file: " + e.getMessage());
         }
     }
 
@@ -112,7 +112,7 @@ public class WhiteLabelTool {
 			
 			String suffix = "-" + envEnumType.name();
 			suffix += isDb01 ? "-DB-01.sql": "-DB-41.sql";
-			String outputFileName = OUTPUT_PATH + PROJECT_PREFIX + whiteLabelConfig.getTicketNo() + suffix;
+			String outputFileName = OUTPUT_PATH + "sql/" + PROJECT_PREFIX + whiteLabelConfig.getTicketNo() + suffix;
 			
 			Map<String, String> replacements = buildReplacements(whiteLabelConfig, envEnumType);
 			
@@ -200,7 +200,7 @@ public class WhiteLabelTool {
 		// 1. 获取或创建基础映射缓存
 		if (baseReplacementsCache == null) {
 			baseReplacementsCache = buildBaseReplacements(whiteLabelConfig);
-			System.out.println("✅ 基础占位符映射已缓存（" + baseReplacementsCache.size() + " 个）");
+			System.out.println("✅ Base placeholder mappings cached (" + baseReplacementsCache.size() + " items)");
 		}
 
 		// 2. 如果没有环境参数，直接返回基础映射的副本
@@ -220,7 +220,7 @@ public class WhiteLabelTool {
 					getEnableFrontendBackendSeparationByDomainValue(whiteLabelConfig, env));
 			}
 
-			System.out.println("✅ " + env.name() + " 环境占位符映射已缓存（" + replacements.size() + " 个）");
+			System.out.println("✅ " + env.name() + " environment placeholder mappings cached (" + replacements.size() + " items)");
 			return replacements;
 		});
 	}
@@ -228,7 +228,7 @@ public class WhiteLabelTool {
 	private static void insertIntoJava(WhiteLabelConfig whiteLabelConfig) {
 		String templateKey = whiteLabelConfig.isApiWhiteLabel() ? "API_OTHER" : "NEW_SITE_OTHER";
 		String templateFile = TEMPLATE_PATHS.get(templateKey);
-		String outputFileName = OUTPUT_PATH + PROJECT_PREFIX + whiteLabelConfig.getTicketNo() + "-other.txt";
+//		String outputFileName = OUTPUT_PATH + PROJECT_PREFIX + whiteLabelConfig.getTicketNo() + "-other.txt";
 		List<String> requiredImports = new ArrayList<>();
 		String className = convertSnakeToCamel(whiteLabelConfig.getWebSiteName());
 		// 将路径转换为 import 语句
@@ -278,7 +278,7 @@ public class WhiteLabelTool {
 			String constJs = TemplateEngine.fill(CONST_JS, replacements);
 			insertAtMarker(Paths.get("../src/main/webapp/js/const/Const.js"), "// insert New White Label", constJs, false);
 		} catch (java.lang.Exception e) {
-			System.err.println("複寫java時發生錯誤: " + e.getMessage());
+			System.err.println("Error writing to Java file: " + e.getMessage());
 		}
 	}
 	
@@ -321,7 +321,7 @@ public class WhiteLabelTool {
 
 				// 檢查是否已存在相同的 import
 				if (line.equals(normalizedImport)) {
-					System.out.println("⚠️  Import 已存在，跳過: " + normalizedImport);
+					System.out.println("⚠️  Import already exists, skipping: " + normalizedImport);
 					return;
 				}
 			}
@@ -350,7 +350,7 @@ public class WhiteLabelTool {
 		}
 
 		String fileName = javaFile.getFileName().toString();
-		System.out.println("✅ Import 已成功插入至 " + fileName + ": " + normalizedImport);
+		System.out.println("✅ Import successfully inserted to " + fileName + ": " + normalizedImport);
 		Files.write(javaFile, result);
 	}
 
@@ -462,7 +462,7 @@ public class WhiteLabelTool {
 			}
 		}
 		String fileName = javaFile.toString().substring(javaFile.toString().lastIndexOf('/') + 1);
-		System.out.println("✅ 文字已成功寫入至 " + fileName);
+		System.out.println("✅ Content successfully written to " + fileName);
 		Files.write(javaFile, result);
 	}
 	
@@ -506,10 +506,13 @@ public class WhiteLabelTool {
 		Map<String, String> replacements = buildReplacements(whiteLabelConfig);
 
 		replacements.put("{$privateIpSetId}", groupInfo.getPrivateIpSetId());
-		replacements.put("{$wwwgaIpSetId}", groupInfo.getBkIpSetId().get(0));
-		replacements.put("{$wwwcfIpSetId}", groupInfo.getBkIpSetId().get(1));
+		replacements.put("{$wwwgaIpSetId}", !groupInfo.getBkIpSetId().isEmpty() ? groupInfo.getBkIpSetId().get(0): null);
+		replacements.put("{$wwwcfIpSetId}", !groupInfo.getBkIpSetId().isEmpty() ? groupInfo.getBkIpSetId().get(1): null);
 		replacements.put("{$apiInfoBkIpSetId}", groupInfo.getApiInfoBkIpSetId());
-
+		
+		String subDomainStatic = envEnumType.getSubDomainStatic();
+		String subDomainApi = envEnumType.getSubDomainApi();
+		
 		// 生成 apidomainname VALUES 部分
 		StringBuilder valuesSb = new StringBuilder();
 		
@@ -518,6 +521,9 @@ public class WhiteLabelTool {
 		
 		// 生成 EnableFrontendBackendSeparationByDomain VALUES 部分
 		StringBuilder enableFrontendBackendSeparationByDomainSb = new StringBuilder();
+		
+		// 生成 EnableDesktopFrontendBackendSeparationByDomain VALUES 部分
+		StringBuilder enableDesktopFrontendBackendSeparationByDomainSb = new StringBuilder();
 
 		// privateIpList
 		List<String> privateIpList = new ArrayList<>(groupInfo.getPrivateIp());
@@ -532,25 +538,41 @@ public class WhiteLabelTool {
 			String value = String.format("\n\t(apidomainname_id_seq_nextval(), '%s', '%s', %s, %s, 'SYSTEM', 0, NOW(6), NOW(6)),",
 				apiWalletInfo.getGroup(), privateIpList.get(i), active, i + 1);
 			valuesSb.append(value);
+			
+//			String corsDomainValue = String.format("\n\t('%s', 1, '%s', '%s', sysdate(6), sysdate(6))",
+//				privateIpList.get(i), subDomainStatic, subDomainApi);
+//			corsDomainSb.append(corsDomainValue);
+			
+			if (!UAT_PRIVATE_DOMAIN_LIST.contains(privateIpList.get(i))) {
+				String frontendBackendSeparation = String.format("\n\t\t\"%s\": 1",
+					privateIpList.get(i));
+				enableFrontendBackendSeparationByDomainSb.append(frontendBackendSeparation);
+				if (i > 0) {
+					enableFrontendBackendSeparationByDomainSb.append(",");
+				}
+			}
 		}
 
 		// backupList
 		List<String> backupList = new ArrayList<>(groupInfo.getBackup());
-		if (isUat) {
-			backupList.addAll(UAT_PUBLIC_DOMAIN_LIST);
-		}
+		
 		for (int i = 0; i < backupList.size(); i++) {
+			if (i > 0) {
+				valuesSb.append(",");
+				corsDomainSb.append(",");
+				enableFrontendBackendSeparationByDomainSb.append(",");
+				enableDesktopFrontendBackendSeparationByDomainSb.append(",");
+			}
 			int active = i >= 2 ? 0 : 1;
 			if (isUat) {
-				active = UAT_PUBLIC_DOMAIN_LIST.contains(backupList.get(i)) ? 1 : 0;
+				active = 0;
 			}
-			String value = String.format("\n\t(apidomainname_id_seq_nextval(), '%s', '%s', %s, %s, 'SYSTEM', 1, NOW(6), NOW(6))",
+			String value = String.format("\n\t(apidomainname_id_seq_nextval(), '%s', '%s', %s, %s, 'SYSTEM', 1, sysdate(6), sysdate(6))",
 				apiWalletInfo.getGroup(), backupList.get(i), active, i + 1);
 			valuesSb.append(value);
 			
 			
-			String subDomainStatic = envEnumType.getSubDomainStatic();
-			String subDomainApi = envEnumType.getSubDomainApi();
+			
 			String corsDomainValue = String.format("\n\t('%s', 1, '%s', '%s', sysdate(6), sysdate(6))",
 				backupList.get(i), subDomainStatic, subDomainApi);
 			corsDomainSb.append(corsDomainValue);
@@ -558,21 +580,26 @@ public class WhiteLabelTool {
 			String frontendBackendSeparation = String.format("\n\t\t\"%s\": 1",
 				backupList.get(i));
 			enableFrontendBackendSeparationByDomainSb.append(frontendBackendSeparation);
+			enableDesktopFrontendBackendSeparationByDomainSb.append(frontendBackendSeparation);
 			
-			if (i < (backupList.size() - 1)) {
+		}
+		if (isUat) {
+			for (int i = 0; i < UAT_PUBLIC_DOMAIN_LIST.size(); i++) {
 				valuesSb.append(",");
-				corsDomainSb.append(",");
-				enableFrontendBackendSeparationByDomainSb.append(",");
-			} else {
-				valuesSb.append(";");
-				corsDomainSb.append(";");
+				String value = String.format("\n\t(apidomainname_id_seq_nextval(), '%s', '%s', %s, %s, 'SYSTEM', 1, sysdate(6), sysdate(6))",
+					apiWalletInfo.getGroup(), UAT_PUBLIC_DOMAIN_LIST.get(i), 1, backupList.size() + i + 1);
+				valuesSb.append(value);
 			}
 		}
+		
+		valuesSb.append(";");
+		corsDomainSb.append(";");
 
 		// 将 VALUES 添加到替换中
 		replacements.put("{$apiDomainValues}", valuesSb.toString());
 		replacements.put("{$corsDomainValues}", corsDomainSb.toString());
 		replacements.put("{$enableFrontendBackendSeparationByDomainValues}", enableFrontendBackendSeparationByDomainSb.toString());
+		replacements.put("{$enableDesktopFrontendBackendSeparationByDomainValues}", enableDesktopFrontendBackendSeparationByDomainSb.toString());
 
 		// 使用模板填充
 		return TemplateEngine.fillFile(templateFile, replacements);
