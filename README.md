@@ -303,58 +303,58 @@ Jira Tool 是一個命令列工具，用於與 Jira REST API 互動，支援以�
 
 ```bash
 # 執行 JiraTool
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool <command> [arguments] [options]
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool <command> [arguments] [options]
 
 # 顯示說明
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool --help
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool --help
 ```
 
 ### 🔧 可用命令
 
 #### 1. get-issue - 取得 Issue 資訊
 ```bash
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool get-issue <issueKey>
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool get-issue <issueKey>
 
 # 範例
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool get-issue SACRIC-1020
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool get-issue SACRIC-1020
 ```
 
 #### 2. get-comments - 取得 Issue 留言
 ```bash
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool get-comments <issueKey>
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool get-comments <issueKey>
 
 # 範例
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool get-comments SACRIC-1020
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool get-comments SACRIC-1020
 ```
 
 #### 3. get-transitions - 取得可用的狀態轉換選項
 ```bash
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool get-transitions <issueKey>
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool get-transitions <issueKey>
 
 # 範例
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool get-transitions SACRIC-1020
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool get-transitions SACRIC-1020
 ```
 
 #### 4. post-comment - 新增留言
 ```bash
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool post-comment <issueKey> <commentText> [options]
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool post-comment <issueKey> <commentText> [options]
 
 # 範例
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool post-comment SACRIC-1020 "This is a comment"
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool post-comment SACRIC-1020 "This is a comment"
 
 # 測試模式（不實際發送）
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool post-comment SACRIC-1020 "Test comment" -t
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool post-comment SACRIC-1020 "Test comment" -t
 ```
 
 #### 5. transition-issue - 轉換 Issue 狀態
 ```bash
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool transition-issue <issueKey> <transitionKey> [options]
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool transition-issue <issueKey> <transitionKey> [options]
 
 # 範例
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool transition-issue SACRIC-1020 TO_DEV
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool transition-issue SACRIC-1020 TO_DEV
 
 # 測試模式
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool transition-issue SACRIC-1020 TO_DEV --testMode
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool transition-issue SACRIC-1020 TO_DEV --testMode
 ```
 
 **可用的 Transition Keys**:
@@ -369,13 +369,13 @@ java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool 
 
 #### 6. start-jira-issue - 啟動開發流程
 ```bash
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool start-jira-issue <issueKey> [options]
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool start-jira-issue <issueKey> [options]
 
 # 範例
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool start-jira-issue SACRIC-1020
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool start-jira-issue SACRIC-1020
 
 # 測試模式（跳過狀態檢查和轉換）
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool start-jira-issue SACRIC-1020 -t
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool start-jira-issue SACRIC-1020 -t
 ```
 
 **執行步驟**:
@@ -385,11 +385,11 @@ java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool 
 
 #### 7. enhanced-search - JQL 進階搜尋
 ```bash
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool enhanced-search [templatePath]
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool enhanced-search [templatePath]
 
 # 範例
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool enhanced-search
-java -cp target/Project-Tool-1.2.1-jar-with-dependencies.jar tool.http.JiraTool enhanced-search my-search.json
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool enhanced-search
+java -cp target/Project-Tool-1.2.3-jar-with-dependencies.jar tool.http.JiraTool enhanced-search my-search.json
 ```
 
 ### ⚙️ 配置檔案
