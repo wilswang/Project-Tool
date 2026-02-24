@@ -547,9 +547,7 @@ public class WhiteLabelTool {
 				String frontendBackendSeparation = String.format("\n\t\t\"%s\": 1",
 					privateIpList.get(i));
 				enableFrontendBackendSeparationByDomainSb.append(frontendBackendSeparation);
-				if (i > 0) {
-					enableFrontendBackendSeparationByDomainSb.append(",");
-				}
+				enableFrontendBackendSeparationByDomainSb.append(",");
 			}
 		}
 

@@ -1,5 +1,5 @@
 {
-	"jql": "key in ({$issueList}})",
+	"jql": "key in ({$issueList})",
 	"expand":"names",
 	"fields": [
 		"id",

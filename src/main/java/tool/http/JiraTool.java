@@ -387,14 +387,19 @@ public class JiraTool {
 	}
 
 	private static void handleEnhancedSearch(JiraClient jira, String[] args) throws Exception {
-		String templatePath = args.length > 1 ? args[1] : "enhanced-search.json";
+		if (args.length < 2) {
+			System.err.println("Usage: JiraTool enhanced-search <issueList> [templatePath]");
+			return;
+		}
+
+		String issueList = args[1];
+		String templatePath = args.length > 2 ? args[2] : "./template/jira/enhanced-search.json";
 
 		System.out.println("Loading template: " + templatePath);
 		String template = jira.loadTemplate(templatePath);
 
-		// 這裡可以對模板進行修改
-		// 例如: template = template.replace("{{jql}}", "project = SA_CRIC");
-		System.out.println("Using template content (unmodified):\n" + template);
+		template = template.replace("{$issueList}", issueList);
+		System.out.println("Using template content:\n" + template);
 
 		HttpResponse response = jira.enhancedSearch(template);
 		JsonNode results = response.parseJson(JsonNode.class);
@@ -512,11 +517,13 @@ public class JiraTool {
 		System.out.println("      Example: java -jar JiraTool.jar start-jira-issue PROJ-123 -t (skip steps 1, 2)");
 		System.out.println();
 
-		System.out.println("  enhanced-search [templatePath]");
+		System.out.println("  enhanced-search <issueList> [templatePath]");
 		System.out.println("      Perform advanced search using JQL");
-		System.out.println("      templatePath: JSON template file path (default: enhanced-search.json)");
-		System.out.println("      Example: java -jar JiraTool.jar enhanced-search");
-		System.out.println("      Example: java -jar JiraTool.jar enhanced-search my-search.json");
+		System.out.println("      issueList: Comma-separated issue keys (e.g. PROJ-1,PROJ-2)");
+		System.out.println("      templatePath: JSON template file path (default: ./template/jira/enhanced-search.json)");
+		System.out.println("      Example: java -jar JiraTool.jar enhanced-search PROJ-123");
+		System.out.println("      Example: java -jar JiraTool.jar enhanced-search PROJ-123,PROJ-456");
+		System.out.println("      Example: java -jar JiraTool.jar enhanced-search PROJ-123 my-search.json");
 		System.out.println();
 
 		System.out.println("Options:");
