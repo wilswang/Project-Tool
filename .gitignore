@@ -12,3 +12,5 @@ settings.json
 /target/
 target
 /USAGE_EXAMPLE.md
+bin/.claude
+bin

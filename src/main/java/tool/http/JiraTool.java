@@ -405,13 +405,28 @@ public class JiraTool {
 		JsonNode results = response.parseJson(JsonNode.class);
 
 		System.out.println("\n=== Search Results ===");
-		System.out.println("Total: " + results.get("total").asInt());
-
+		
 		if (results.has("issues")) {
+			System.out.println("Total: " + results.get("issues").size());
 			for (JsonNode issue : results.get("issues")) {
 				String key = issue.get("key").asText();
 				String summary = issue.get("fields").get("summary").asText();
 				System.out.println(key + ": " + summary);
+				// 寫入文件到 ./result/jira 目錄
+				File resultDir = new File("./result/jira");
+				if (!resultDir.exists()) {
+					resultDir.mkdirs();
+					System.out.println("Created directory: ./result/jira/");
+				}
+				
+				String fileName = key + "-jira.txt";
+				File resultFile = new File(resultDir, fileName);
+				try (FileWriter writer = new FileWriter(resultFile)) {
+					writer.write(issue.toPrettyString());
+					System.out.println("✅ Issue details saved to: " + resultFile.getPath());
+				} catch (IOException e) {
+					System.err.println("❌ Failed to save issue details to file: " + e.getMessage());
+				}
 			}
 		}
 	}
