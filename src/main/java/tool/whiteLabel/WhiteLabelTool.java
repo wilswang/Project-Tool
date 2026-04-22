@@ -84,18 +84,22 @@ public class WhiteLabelTool {
             WhiteLabelConfig whiteLabelConfig = objectMapper.readValue(new File(configFilePath), WhiteLabelConfig.class);
 			System.out.println(whiteLabelConfig.toString());
 			whiteLabelConfig.validate();
-			String webSitePageKey = "WEB_SITE_PAGE";
-			generateSqlFile(whiteLabelConfig, true);
-			generateSqlFile(whiteLabelConfig, false);
-			if (!whiteLabelConfig.isSqlOnly()) {
-				if (!whiteLabelConfig.isApiWhiteLabel()) {
-					generateFromTemplate(whiteLabelConfig, "DOMAIN_TYPE", DOMAIN_TYPE_PACKAGE, "DomainType.java");
-//					generateFromTemplate(whiteLabel, "COUNTRY_TYPE", "../src/main/java/com/nv/commons/code/domain/", "CountryType.java");
-				} else {
-					webSitePageKey = "API_WALLET_WEB_SITE_PAGE";
+			if (whiteLabelConfig.getFiles() != null && !whiteLabelConfig.getFiles().isEmpty()) {
+				processDynamicFiles(whiteLabelConfig);
+			} else {
+				String webSitePageKey = "WEB_SITE_PAGE";
+				generateSqlFile(whiteLabelConfig, true);
+				generateSqlFile(whiteLabelConfig, false);
+				if (!whiteLabelConfig.isSqlOnly()) {
+					if (!whiteLabelConfig.isApiWhiteLabel()) {
+						generateFromTemplate(whiteLabelConfig, "DOMAIN_TYPE", DOMAIN_TYPE_PACKAGE, "DomainType.java");
+//						generateFromTemplate(whiteLabel, "COUNTRY_TYPE", "../src/main/java/com/nv/commons/code/domain/", "CountryType.java");
+					} else {
+						webSitePageKey = "API_WALLET_WEB_SITE_PAGE";
+					}
+					generateFromTemplate(whiteLabelConfig, webSitePageKey, WEBSITE_PAGE_PACKAGE, "WebSitePage.java");
+					insertIntoJava(whiteLabelConfig);
 				}
-				generateFromTemplate(whiteLabelConfig, webSitePageKey, WEBSITE_PAGE_PACKAGE, "WebSitePage.java");
-				insertIntoJava(whiteLabelConfig);
 			}
         } catch (IOException e) {
             System.err.println("Error processing JSON file: " + e.getMessage());
@@ -487,42 +491,95 @@ public class WhiteLabelTool {
         return camelCaseString.toString();
     }
 	
+	private static void processDynamicFiles(WhiteLabelConfig config) {
+		Map<String, String> baseReplacements = buildReplacements(config);
+		for (FileConfig fc : config.getFiles()) {
+			try {
+				if (fc.isNew()) {
+					if (fc.getEnvironments() != null && !fc.getEnvironments().isEmpty()) {
+						processNewFilePerEnv(config, fc);
+					} else {
+						processNewFile(fc, baseReplacements);
+					}
+				} else {
+					processInsertFile(fc, baseReplacements);
+				}
+			} catch (Exception e) {
+				System.err.println("❌ Error processing '" + fc.getName() + "': " + e.getMessage());
+			}
+		}
+	}
+
+	private static void processNewFilePerEnv(WhiteLabelConfig config, FileConfig fc) {
+		for (String envName : fc.getEnvironments()) {
+			try {
+				EnvEnumType envEnumType = EnvEnumType.valueOf(envName);
+				Map<String, String> replacements = buildReplacements(config, envEnumType);
+				replacements.put("{$env}", envName);
+
+				if (config.getApiWalletInfo() != null && config.getApiWalletInfo().isNewGroup()) {
+					replacements.putAll(buildNewGroupSqlReplacements(config, envEnumType));
+				}
+
+				String resolvedTemplate = TemplateEngine.fill(fc.getTemplate(), replacements);
+				String resolvedName = TemplateEngine.fill(fc.getName(), replacements);
+
+				String location = fc.getLocation().endsWith("/") ? fc.getLocation() : fc.getLocation() + "/";
+				Files.createDirectories(Paths.get(location));
+				String outputPath = location + resolvedName;
+				TemplateEngine.writeToFile(outputPath, TemplateEngine.fillFile(resolvedTemplate, replacements));
+				System.out.println("✅ Created (" + envName + "): " + outputPath);
+			} catch (Exception e) {
+				System.err.println("❌ Error processing env " + envName + " for '" + fc.getName() + "': " + e.getMessage());
+			}
+		}
+	}
+
+	private static void processNewFile(FileConfig fc, Map<String, String> replacements) throws IOException {
+		String resolvedName = TemplateEngine.fill(fc.getName(), replacements);
+		String location = fc.getLocation().endsWith("/") ? fc.getLocation() : fc.getLocation() + "/";
+		Files.createDirectories(Paths.get(location));
+		String outputPath = location + resolvedName;
+		TemplateEngine.writeToFile(outputPath, TemplateEngine.fillFile(fc.getTemplate(), replacements));
+		System.out.println("✅ Created: " + outputPath);
+	}
+
+	private static void processInsertFile(FileConfig fc, Map<String, String> replacements) throws IOException {
+		String content = TemplateEngine.fillFile(fc.getTemplate(), replacements);
+		String marker = StringUtils.isNotBlank(fc.getMarker()) ? fc.getMarker() : "// insert New White Label";
+		Path target = Paths.get(fc.getLocation());
+		insertAtMarker(target, marker, content, fc.isInsertAfter());
+		if (fc.getImports() != null) {
+			for (String imp : fc.getImports()) {
+				insertImportStatement(target, TemplateEngine.fill(imp, replacements));
+			}
+		}
+	}
+
 	private static String generateUpdateGroupSql(WhiteLabelConfig whiteLabelConfig) {
 		String templateFile = TEMPLATE_PATHS.get("UPDATE_GROUP_SQL");
 		Map<String, String> replacements = buildReplacements(whiteLabelConfig);
 		return TemplateEngine.fillFile(templateFile, replacements);
 	}
 	
-	private static String generateNewGroupSql(WhiteLabelConfig whiteLabelConfig, EnvEnumType envEnumType) {
+	private static Map<String, String> buildNewGroupSqlReplacements(WhiteLabelConfig whiteLabelConfig, EnvEnumType envEnumType) {
 		boolean isUat = envEnumType == EnvEnumType.UAT;
 		ApiWalletInfo apiWalletInfo = whiteLabelConfig.getApiWalletInfo();
 		GroupInfo groupInfo = apiWalletInfo.getGroupInfo();
 
-		// 选择模板
-		String templateKey = "NEW_GROUP_SQL_" + envEnumType.name();
-		String templateFile = TEMPLATE_PATHS.get(templateKey);
-
-		// 构建基础替换
-		Map<String, String> replacements = buildReplacements(whiteLabelConfig);
+		Map<String, String> replacements = new LinkedHashMap<>();
 
 		replacements.put("{$privateIpSetId}", groupInfo.getPrivateIpSetId());
 		replacements.put("{$wwwgaIpSetId}", !groupInfo.getBkIpSetId().isEmpty() ? groupInfo.getBkIpSetId().get(0): null);
 		replacements.put("{$wwwcfIpSetId}", !groupInfo.getBkIpSetId().isEmpty() ? groupInfo.getBkIpSetId().get(1): null);
 		replacements.put("{$apiInfoBkIpSetId}", groupInfo.getApiInfoBkIpSetId());
-		
+
 		String subDomainStatic = envEnumType.getSubDomainStatic();
 		String subDomainApi = envEnumType.getSubDomainApi();
-		
-		// 生成 apidomainname VALUES 部分
+
 		StringBuilder valuesSb = new StringBuilder();
-		
-		// 生成 corsdomain VALUES 部分
 		StringBuilder corsDomainSb = new StringBuilder();
-		
-		// 生成 EnableFrontendBackendSeparationByDomain VALUES 部分
 		StringBuilder enableFrontendBackendSeparationByDomainSb = new StringBuilder();
-		
-		// 生成 EnableDesktopFrontendBackendSeparationByDomain VALUES 部分
 		StringBuilder enableDesktopFrontendBackendSeparationByDomainSb = new StringBuilder();
 
 		// privateIpList
@@ -538,14 +595,9 @@ public class WhiteLabelTool {
 			String value = String.format("\n\t(apidomainname_id_seq_nextval(), '%s', '%s', %s, %s, 'SYSTEM', 0, NOW(6), NOW(6)),",
 				apiWalletInfo.getGroup(), privateIpList.get(i), active, i + 1);
 			valuesSb.append(value);
-			
-//			String corsDomainValue = String.format("\n\t('%s', 1, '%s', '%s', sysdate(6), sysdate(6))",
-//				privateIpList.get(i), subDomainStatic, subDomainApi);
-//			corsDomainSb.append(corsDomainValue);
-			
+
 			if (!UAT_PRIVATE_DOMAIN_LIST.contains(privateIpList.get(i))) {
-				String frontendBackendSeparation = String.format("\n\t\t\"%s\": 1",
-					privateIpList.get(i));
+				String frontendBackendSeparation = String.format("\n\t\t\"%s\": 1", privateIpList.get(i));
 				enableFrontendBackendSeparationByDomainSb.append(frontendBackendSeparation);
 				enableFrontendBackendSeparationByDomainSb.append(",");
 			}
@@ -553,7 +605,6 @@ public class WhiteLabelTool {
 
 		// backupList
 		List<String> backupList = new ArrayList<>(groupInfo.getBackup());
-		
 		for (int i = 0; i < backupList.size(); i++) {
 			if (i > 0) {
 				valuesSb.append(",");
@@ -568,18 +619,14 @@ public class WhiteLabelTool {
 			String value = String.format("\n\t(apidomainname_id_seq_nextval(), '%s', '%s', %s, %s, 'SYSTEM', 1, sysdate(6), sysdate(6))",
 				apiWalletInfo.getGroup(), backupList.get(i), active, i + 1);
 			valuesSb.append(value);
-			
-			
-			
+
 			String corsDomainValue = String.format("\n\t('%s', 1, '%s', '%s', sysdate(6), sysdate(6))",
 				backupList.get(i), subDomainStatic, subDomainApi);
 			corsDomainSb.append(corsDomainValue);
-			
-			String frontendBackendSeparation = String.format("\n\t\t\"%s\": 1",
-				backupList.get(i));
+
+			String frontendBackendSeparation = String.format("\n\t\t\"%s\": 1", backupList.get(i));
 			enableFrontendBackendSeparationByDomainSb.append(frontendBackendSeparation);
 			enableDesktopFrontendBackendSeparationByDomainSb.append(frontendBackendSeparation);
-			
 		}
 		if (isUat) {
 			for (int i = 0; i < UAT_PUBLIC_DOMAIN_LIST.size(); i++) {
@@ -589,17 +636,22 @@ public class WhiteLabelTool {
 				valuesSb.append(value);
 			}
 		}
-		
+
 		valuesSb.append(";");
 		corsDomainSb.append(";");
 
-		// 将 VALUES 添加到替换中
 		replacements.put("{$apiDomainValues}", valuesSb.toString());
 		replacements.put("{$corsDomainValues}", corsDomainSb.toString());
 		replacements.put("{$enableFrontendBackendSeparationByDomainValues}", enableFrontendBackendSeparationByDomainSb.toString());
 		replacements.put("{$enableDesktopFrontendBackendSeparationByDomainValues}", enableDesktopFrontendBackendSeparationByDomainSb.toString());
 
-		// 使用模板填充
+		return replacements;
+	}
+
+	private static String generateNewGroupSql(WhiteLabelConfig whiteLabelConfig, EnvEnumType envEnumType) {
+		String templateFile = TEMPLATE_PATHS.get("NEW_GROUP_SQL_" + envEnumType.name());
+		Map<String, String> replacements = buildReplacements(whiteLabelConfig);
+		replacements.putAll(buildNewGroupSqlReplacements(whiteLabelConfig, envEnumType));
 		return TemplateEngine.fillFile(templateFile, replacements);
 	}
 	

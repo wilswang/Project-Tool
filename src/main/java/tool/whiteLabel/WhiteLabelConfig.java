@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -54,6 +55,9 @@ public class WhiteLabelConfig {
 	@Valid
 	@JsonProperty("apiWalletInfo")
 	private ApiWalletInfo apiWalletInfo;
+
+	@JsonProperty("files")
+	private List<FileConfig> files;
 
 	/**
 	 * 额外的动态属性（JSON 中未在类中定义的字段）
@@ -160,7 +164,7 @@ public class WhiteLabelConfig {
 		return "WhiteLabelConfig{" + "sqlOnly=" + sqlOnly + ", ticketNo='" + ticketNo + '\'' + ", webSiteName='" + webSiteName + '\''
 			+ ", webSiteValue=" + webSiteValue + ", host='" + host + '\'' + ", apiWhiteLabel=" + apiWhiteLabel + ", customized=" + customized
 			+ ", jiraSummary='" + jiraSummary + '\'' + ", fixVersion='" + fixVersion + '\'' + ", developer='" + developer + '\'' + ", apiWalletInfo="
-			+ apiWalletInfo + ", additionalProperties=" + additionalProperties + '}';
+			+ apiWalletInfo + ", additionalProperties=" + additionalProperties + ", files=" + files + '}';
 	}
 	
 }
