@@ -336,6 +336,8 @@ java -cp target/Project-Tool.jar tool.http.JiraTool get-issue <issueKey>
 java -cp target/Project-Tool.jar tool.http.JiraTool get-issue SACRIC-1020
 ```
 
+查詢欄位由 `application.properties` 的 `jira.issue.fields` 控制（見下方配置檔案說明），未設定時 Jira 會回傳完整預設欄位。
+
 #### 2. get-comments - 取得 Issue 留言
 ```bash
 java -cp target/Project-Tool.jar tool.http.JiraTool get-comments <issueKey>
@@ -424,16 +426,19 @@ JiraTool 需要 `application.properties` 配置檔案，包含以下設定：
 
 ```properties
 # Jira API 基礎 URL
-baseUrl=https://your-domain.atlassian.net
+jira.baseUrl=https://your-domain.atlassian.net
 
 # 認證資訊（Basic Auth）
-account=your-email@example.com
-token=your-api-token
+jira.account=your-email@example.com
+jira.token=your-api-token
 
 # Timeout 設定（毫秒，選填）
 connectTimeout=30000
 readTimeout=60000
 writeTimeout=60000
+
+# get-issue 查詢欄位（逗號分隔，選填，留空或不設定則不夾帶 fields 參數，由 Jira 回傳完整預設欄位）
+jira.issue.fields=id,key,assignee,fixVersions,status,customfield_10072,customfield_10037,comment,description,summary
 ```
 
 ### 📁 Template 目錄
@@ -523,7 +528,7 @@ result/
 - Domain Checker 可搭配 CI/CD 流程進行網域可用性監控
 
 ### 工具 C (Jira Tool)
-- **配置管理**: 使用 `application.properties` 集中管理 Jira 連線資訊
+- **配置管理**: 使用 `application.properties` 集中管理 Jira 連線資訊（`jira.baseUrl`/`jira.account`/`jira.token`/`jira.issue.fields`）
 - **測試模式**: 開發和測試時使用 `-t` 參數避免實際修改 Jira 資料
 - **檔案輸出**: `start-jira-issue` 會將 issue 資訊儲存至 `./result/jira/` 目錄，便於後續處理
 - **API 整合**: 可作為 CI/CD 流程的一部分，自動化 issue 管理
@@ -532,6 +537,12 @@ result/
 ---
 
 ## 📝 版本歷史
+
+### v1.3.1 (2026-07-14)
+- 🔧 **`get-issue` 查詢欄位改由設定檔控制** - `application.properties` 新增 `jira.issue.fields`，可自訂逗號分隔欄位清單；未設定或空值時，`get-issue` 不夾帶 `fields` 參數，改由 Jira 回傳完整預設欄位
+- 🔧 **`application.properties` 認證/連線 key 加上 `jira.` 前綴** - `baseUrl`/`account`/`token` 改為 `jira.baseUrl`/`jira.account`/`jira.token`，與 `jira.issue.fields` 命名風格一致並區分用途
+- 🐛 **修正 `--help` 說明文字** - 修正 `Configuration File` 區塊中與實際設定檔不符的 key 名稱（`jira.base.url` → `jira.baseUrl` 等）
+- ✅ **`JiraClientTest` 新增測試** - 驗證 `jira.issue.fields` 正確載入、帶 `fields` 參數時回應僅含指定欄位、未帶 `fields` 參數時回應包含完整預設欄位
 
 ### v1.3.0 (2026-07-14)
 - 🗂 **模板目錄依白牌類型重組** - `src/template/` 下的白牌模板分類到 `white-label/ApiWallet/` 和 `white-label/NewSite/` 子目錄，`Const.txt` 留在 `white-label/` 根目錄

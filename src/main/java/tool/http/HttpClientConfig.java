@@ -38,6 +38,8 @@ public class HttpClientConfig {
 	private Integer maxIdleConnections = 5;
 	private Long keepAliveDuration = 300000L; // 5 分鐘
 
+	private String fields; // get-issue 查詢欄位（對應 jira.issue.fields）
+
 	/**
 	 * 驗證配置使用 Hibernate Validator
 	 * 參考 WhiteLabelConfig.java 的 validate() 模式

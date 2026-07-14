@@ -53,9 +53,9 @@ public class JiraConfig {
 		}
 
 		HttpClientConfig config = new HttpClientConfig();
-		config.setBaseUrl(props.getProperty("baseUrl"));
-		config.setAccount(props.getProperty("account"));
-		config.setToken(props.getProperty("token"));
+		config.setBaseUrl(props.getProperty("jira.baseUrl"));
+		config.setAccount(props.getProperty("jira.account"));
+		config.setToken(props.getProperty("jira.token"));
 
 		// 選擇性 timeout 設定
 		if (props.containsKey("connectTimeout")) {
@@ -73,6 +73,8 @@ public class JiraConfig {
 		if (props.containsKey("keepAliveDuration")) {
 			config.setKeepAliveDuration(Long.parseLong(props.getProperty("keepAliveDuration")));
 		}
+
+		config.setFields(props.getProperty("jira.issue.fields"));
 
 		return config;
 	}

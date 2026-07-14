@@ -60,7 +60,7 @@ public class JiraTool {
 			String command = filteredArgs[0];
 			switch (command) {
 				case "get-issue":
-					handleGetIssue(jira, filteredArgs);
+					handleGetIssue(jira, config, filteredArgs);
 					break;
 
 				case "get-comments":
@@ -99,7 +99,7 @@ public class JiraTool {
 		}
 	}
 
-	private static void handleGetIssue(JiraClient jira, String[] args) throws Exception {
+	private static void handleGetIssue(JiraClient jira, HttpClientConfig config, String[] args) throws Exception {
 		if (args.length < 2) {
 			System.err.println("Usage: JiraTool get-issue <issueKey>");
 			return;
@@ -107,7 +107,10 @@ public class JiraTool {
 
 		String issueKey = args[1];
 		Map<String, String> queryParams = new HashMap<>();
-		queryParams.put("fields", "id,key,assignee,fixVersions,status,customfield_10072,customfield_10037,comment,description,summary");
+		String fields = config.getFields();
+		if (fields != null && !fields.trim().isEmpty()) {
+			queryParams.put("fields", fields);
+		}
 		JsonNode issue = jira.getIssue(issueKey, queryParams);
 
 		// 直接輸出完整 JSON response（已格式化）
@@ -550,9 +553,9 @@ public class JiraTool {
 		System.out.println("Configuration File:");
 		System.out.println("  This tool requires an application.properties configuration file");
 		System.out.println("  The configuration file should contain:");
-		System.out.println("    - jira.base.url: Jira server URL");
-		System.out.println("    - jira.auth.email: Authentication email");
-		System.out.println("    - jira.auth.token: API Token");
+		System.out.println("    - jira.baseUrl: Jira server URL");
+		System.out.println("    - jira.account: Authentication email");
+		System.out.println("    - jira.token: API Token");
 		System.out.println();
 
 		System.out.println("Help:");

@@ -5,7 +5,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -42,7 +48,7 @@ public class JiraClientTest {
 
 		try {
 			// 調用 getIssue（正確格式應該是 SA_CRIC-1020，中間有底線）
-			JsonNode issue = jiraClient.getIssue("SA_CRIC-1020");
+			JsonNode issue = jiraClient.getIssue("SACRIC-1020");
 
 			// 驗證回應
 			assertNotNull("Issue 不應為 null", issue);
@@ -77,6 +83,64 @@ public class JiraClientTest {
 			e.printStackTrace();
 			fail("Get Issue 失敗: " + e.getMessage());
 		}
+	}
+
+	@Test
+	public void testJiraIssueFieldsConfig_LoadedFromProperties() throws IOException {
+		System.out.println("=== 測試: jira.issue.fields 應從 application.properties 載入 ===");
+
+		String fields = config.getFields();
+		System.out.println("jira.issue.fields = " + fields);
+
+		assertNotNull("config.getFields() 不應為 null（application.properties 需設定 jira.issue.fields）", fields);
+		assertFalse("config.getFields() 不應為空字串", fields.trim().isEmpty());
+		assertTrue("應包含 summary 欄位", fields.contains("summary"));
+
+		System.out.println("✅ jira.issue.fields 讀取正確");
+	}
+
+	@Test
+	public void testGetIssue_WithConfiguredFields_OnlyReturnsRequestedFields() throws IOException {
+		System.out.println("=== 測試: 帶 fields 參數時，回應只包含指定欄位 ===");
+
+		String issueKey = "SACRIC-1020";
+		String fields = config.getFields();
+		assertNotNull("測試前置條件: jira.issue.fields 需已設定", fields);
+
+		Map<String, String> queryParams = new HashMap<>();
+		queryParams.put("fields", fields);
+		JsonNode issue = jiraClient.getIssue(issueKey, queryParams);
+
+		JsonNode issueFields = issue.get("fields");
+		assertNotNull("回應應包含 'fields' 節點", issueFields);
+
+		Set<String> requestedFields = new HashSet<>(Arrays.asList(fields.split(",")));
+		Iterator<String> actualFieldNames = issueFields.fieldNames();
+		while (actualFieldNames.hasNext()) {
+			String fieldName = actualFieldNames.next();
+			assertTrue("回應欄位 '" + fieldName + "' 應在設定的 fields 清單內: " + fields,
+				requestedFields.contains(fieldName));
+		}
+
+		System.out.println("✅ 回應欄位皆屬於設定清單，共 " + issueFields.size() + " 個欄位");
+	}
+
+	@Test
+	public void testGetIssue_WithoutFieldsParam_ReturnsFullDefaultFieldSet() throws IOException {
+		System.out.println("=== 測試: 不帶 fields 參數時，回應包含 Jira 預設完整欄位 ===");
+
+		String issueKey = "SACRIC-1020";
+		// 不傳 queryParams（相當於 handleGetIssue 在 jira.issue.fields 未設定時的行為）
+		JsonNode issue = jiraClient.getIssue(issueKey);
+
+		JsonNode issueFields = issue.get("fields");
+		assertNotNull("回應應包含 'fields' 節點", issueFields);
+
+		int configuredFieldCount = config.getFields().split(",").length;
+		assertTrue("未帶 fields 參數時，回應欄位數量應多於設定清單筆數（Jira 會回傳完整預設欄位）",
+			issueFields.size() > configuredFieldCount);
+
+		System.out.println("✅ 未帶 fields 參數，Jira 回傳完整欄位，共 " + issueFields.size() + " 個欄位");
 	}
 
 	@Test
