@@ -31,21 +31,21 @@ VALUES ({$webSiteValue}, 1, 'root', sysdate(6), 'root' , sysdate(6), '{
 UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_SET(jsonvalue, '$."{$webSiteValue}"', json_object("url", "", "w", "1246", "h", "850")) WHERE syskey = 'PlayerSignUpSetting';
 
 -- Support Info
-UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_email":""}') WHERE syskey = 'SupportInfo';
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_email":"{$supportInfoEmail}"}') WHERE syskey = 'SupportInfo';
 
-UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_facebook":""}') WHERE syskey = 'SupportInfo';
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_facebook":"{$supportInfoFb}"}') WHERE syskey = 'SupportInfo';
 
-UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_imo":""}') WHERE syskey = 'SupportInfo';
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_imo":"{$supportInfoImo}"}') WHERE syskey = 'SupportInfo';
 
-UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_skype":""}') WHERE syskey = 'SupportInfo';
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_skype":"{$supportInfoSkype}"}') WHERE syskey = 'SupportInfo';
 
-UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_whatsapp":""}') WHERE syskey = 'SupportInfo';
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_whatsapp":"{$supportInfoWhatsApp}"}') WHERE syskey = 'SupportInfo';
 
-UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_twitter":""}') WHERE syskey = 'SupportInfo';
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_twitter":"{$supportInfoTwitter}"}') WHERE syskey = 'SupportInfo';
 
-UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_instagram":""}') WHERE syskey = 'SupportInfo';
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_instagram":"{$supportInfoIg}"}') WHERE syskey = 'SupportInfo';
 
-UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_telegram":""}') WHERE syskey = 'SupportInfo';
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_telegram":"{$supportInfoTg}"}') WHERE syskey = 'SupportInfo';
 
 INSERT INTO corsdomain (name, isactive, subdomainstatic, subdomainapi, createdate, updatedate)
 values {$corsDomainValues};
@@ -55,3 +55,9 @@ set updatedate = sysdate(6)
   , jsonvalue  = JSON_MERGE(jsonvalue, '{ {$enableFrontendBackendSeparationByDomainValues}
 }')
 where syskey = 'EnableFrontendBackendSeparationByDomain';
+
+UPDATE systemsetting
+set updatedate = sysdate(6)
+  , jsonvalue  = JSON_MERGE(jsonvalue, '{ {$enableFrontendBackendSeparationByDomainValues}
+}')
+where syskey = 'EnableDesktopFrontendBackendSeparationByDomain';

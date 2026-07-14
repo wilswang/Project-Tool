@@ -1,0 +1,93 @@
+{
+	"project": "SACRIC",
+   "sqlOnly":false,
+   "ticketNo":"770",
+   "webSiteName":"TEST_CAM12345",
+   "webSiteValue":99999,
+   "apiWhiteLabel":true,
+   "host":"",
+   "apiWalletInfo":{
+      "cert":"nDhn9L3bRUarirvY",
+      "newGroup":false,
+      "group":"Q99",
+      "groupInfo":{
+         "privateIpSetId":"privateIpSetId",
+         "privateIp":[
+            "pra48ozwin365.xyz",
+            "pra48ozwin365.space"
+         ],
+         "bkIpSetId":[
+            "bkIpSetId1",
+            "bkIpSetId2"
+         ],
+         "apiInfoBkIpSetId":"apiInfoBkIpSetId",
+         "backup":[
+            "ozvvin365.live",
+            "ozwin365.space",
+            "ozvvin365.space",
+            "o2win365.space",
+            "o2win365.live",
+            "o2vvin365.live"
+         ]
+      },
+	   "files": [
+		   {
+			   "name": "{$project}-{$ticketNo}-{$env}-DB-01.sql",
+			   "isNew": true,
+			   "location": "./result/sql/ApiWallet",
+			   "template": "./template/white-label/ApiWallet/DB-01-template.txt",
+			   "environments": [
+				   "DEV",
+				   "UAT",
+				   "SIM"
+			   ]
+		   },
+		   {
+			   "name": "{$project}-{$ticketNo}-{$env}-DB-41.sql",
+			   "isNew": true,
+			   "location": "./result/sql/ApiWallet",
+			   "template": "./template/white-label/ApiWallet/DB-41-template.txt",
+			   "environments": [
+				   "DEV",
+				   "UAT",
+				   "SIM"
+			   ]
+		   },
+		   {
+			   "name": "WebSiteType",
+			   "isNew": false,
+			   "location": "../src/main/java/com/nv/commons/code/WebSiteType.java",
+			   "template": "./template/white-label/ApiWallet/WST.txt",
+			   "imports": [
+				   "com.nv.commons.website.page.{$className}WebSitePage"
+			   ]
+		   },
+		   {
+			   "name": "{$className}WebSitePage.java",
+			   "isNew": true,
+			   "location": "../src/main/java/com/nv/commons/website/page/",
+			   "template": "./template/white-label/ApiWallet/WebSitePageTemplate.txt"
+		   },
+		   {
+			   "name": "Const",
+			   "isNew": false,
+			   "location": "../src/main/webapp/js/const/Const.js",
+			   "template": "./template/white-label/Const.txt"
+		   },
+		   {
+			   "name": "Setting",
+			   "isNew": false,
+			   "location": "../src/main/java/com/nv/commons/model/Setting.java",
+			   "template": "./template/white-label/ApiWallet/Setting1.txt",
+			   "marker": "// insert New White Label setting-1"
+		   },
+		   {
+			   "name": "Setting",
+			   "isNew": false,
+			   "location": "../src/main/java/com/nv/commons/model/Setting.java",
+			   "template": "./template/white-label/ApiWallet/Setting2.txt",
+			   "marker": "// insert New White Label setting-2"
+		   }
+	   ]
+   }
+}

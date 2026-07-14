@@ -16,7 +16,7 @@ VALUES ({$webSiteValue}, 1, 'root', sysdate(6), 'root', sysdate(6), '{
 	"offerBetfairExchange": 0,
 	"enableDabbaModeOddsSetting": 0
 }', '{
-	"offerGameProduct": "[1,2,3,5,6,12]"
+	"offerGameProduct": "[1,2,3,6,12,14]"
 }', 1, 0, '{
 	"mobileImgUrl": "",
 	"desktopImgUrl": "",
@@ -31,4 +31,7 @@ VALUES ({$webSiteValue}, 1, 'root', sysdate(6), 'root', sysdate(6), '{
 
 -- Mail Info
 UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_recipients":""}') WHERE syskey = 'MailInfo';
+
+-- API 2.0 Group :
+UPDATE domaingroup SET groupsite = JSON_ARRAY_APPEND(groupsite, '$',  '{$webSiteValue}') WHERE GROUPNAME = '{$group}';
 

@@ -1,0 +1,20 @@
+-- SACRIC-{$ticketNo} {$jiraSummary}, {$developer}
+INSERT INTO marketliquidity (id, eventtype, markettype, lowliquidity, manager, updatedate, site)
+VALUES (marketliquidity_id_seq_nextval(), 1, 'MATCH_ODDS', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue}),
+	   (marketliquidity_id_seq_nextval(), 2, 'MATCH_ODDS', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue}),
+	   (marketliquidity_id_seq_nextval(), 4, 'MATCH_ODDS', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue}),
+	   (marketliquidity_id_seq_nextval(), 5, 'MATCH_ODDS', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue}),
+	   (marketliquidity_id_seq_nextval(), 7, 'MATCH_ODDS', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue}),
+	   (marketliquidity_id_seq_nextval(), 6423, 'MATCH_ODDS', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue}),
+	   (marketliquidity_id_seq_nextval(), 7632, 'MATCH_ODDS', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue}),
+	   (marketliquidity_id_seq_nextval(), 1, 'OTHERS', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue}),
+	   (marketliquidity_id_seq_nextval(), 2, 'OTHERS', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue}),
+	   (marketliquidity_id_seq_nextval(), 4, 'OTHERS', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue}),
+	   (marketliquidity_id_seq_nextval(), 5, 'OTHERS', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue}),
+	   (marketliquidity_id_seq_nextval(), 7, 'OTHERS', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue}),
+	   (marketliquidity_id_seq_nextval(), 6423, 'OTHERS', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue}),
+	   (marketliquidity_id_seq_nextval(), 7632, 'OTHERS', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue}),
+	   (marketliquidity_id_seq_nextval(), 4, 'LINE_MARKET', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue}),
+	   (marketliquidity_id_seq_nextval(), 4339, 'MATCH_ODDS', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue}),
+	   (marketliquidity_id_seq_nextval(), 4339, 'OTHERS', {$lowLiquidity}, 'root', sysdate(6), {$webSiteValue});
+

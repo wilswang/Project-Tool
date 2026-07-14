@@ -66,17 +66,16 @@ project-tool.bat B                    # 工具 B: Domain Checker
   },
   "files": [
     {
-      "name": "{$ticketNo}-{$env}-DB-01.sql",
+      "name": "{$ticketNo}-DB-01.sql",
       "isNew": true,
       "location": "./result/sql/",
-      "template": "./template/white-label/NewGroup-SQL-{$env}-template.txt",
-      "environments": ["DEV", "UAT", "SIM"]
+      "template": "./template/white-label/ApiWallet/DB-01-template.txt"
     },
     {
       "name": "WebSiteType",
       "isNew": false,
       "location": "../src/main/java/com/nv/commons/code/WebSiteType.java",
-      "template": "./template/white-label/ApiWallet-WST.txt",
+      "template": "./template/white-label/ApiWallet/WST.txt",
       "imports": ["com.nv.commons.website.page.{$className}ApiWalletWebSitePage"]
     }
   ]
@@ -96,6 +95,38 @@ project-tool.bat B                    # 工具 B: Domain Checker
 
 自動生成：`{$project}` = "SACRIC"、`{$lowLiquidity}` = "20000"，可直接在 template 中使用。
 
+### 🗂 模板／輸出路徑依白牌類型分類（v1.3.0+）
+
+`src/template/white-label/` 底下依白牌類型分為 `ApiWallet/`、`NewSite/` 子目錄，`Const.txt` 則放在 `white-label/` 根目錄（插入 Const.js，不分類型）。由於 `files[].location`、`files[].template`、`files[].name` 本來就是可自由填寫的字串（支援 placeholder），這種依類型分類只是把模板檔案實際放到對應子目錄，並在 JSON 設定檔的 `template` 欄位填對應路徑即可，**不需要修改 `WhiteLabelTool.java`**：
+
+```json
+{
+  "ticketNo": "SACRIC-1200",
+  "project": "SACRIC",
+  "files": [
+    {
+      "name": "{$project}-{$ticketNo}-DB-01.sql",
+      "isNew": true,
+      "location": "./result/sql/ApiWallet/",
+      "template": "./template/white-label/ApiWallet/DB-01-template.txt"
+    },
+    {
+      "name": "{$project}-{$ticketNo}-DB-01.sql",
+      "isNew": true,
+      "location": "./result/sql/NewSite/",
+      "template": "./template/white-label/NewSite/DB-01-template.txt"
+    }
+  ]
+}
+```
+
+- **模板分類**：`template/white-label/ApiWallet/`、`template/white-label/NewSite/` — 依白牌類型放置對應模板檔案，見下方「常用模板檔案」表格
+- **輸出路徑分類**：`result/sql/...` 底下要分幾層子目錄、叫什麼名字，完全由 `files[].location` 決定，工具本身不限制或硬編碼任何白牌類型的輸出路徑
+- **檔名前綴**：SQL 檔名想帶上 `project` 前綴（如 `SACRIC-1200-...`）→ 用 v1.1.0 動態欄位機制加一個 `"project": "SACRIC"`，即可在 `name`/`template` 中用 `{$project}`
+- **範例設定檔**：`src/template/whiteLabel.json`（ApiWallet 白牌完整範例）、`src/template/sample-urlChecker.json`（工具 B 範例）可直接參考或複製修改
+
+> ⚠️ **已知差異**：模板目錄重組後，`NewGroup-SQL-DEV/UAT/SIM-template.txt`、`UpdateGroup-SQL-template.txt` 這幾個新建/更新 API Group 用的 SQL 模板已被移除，未搬移到新目錄結構下。若既有設定檔的 `files[].template` 仍指向這些路徑（例如 `newGroup:true` 的流程），會因為找不到模板檔案而處理失敗，目前尚未補上對應模板。
+
 ---
 
 ## 🌍 多環境架構
@@ -108,17 +139,25 @@ project-tool.bat B                    # 工具 B: Domain Checker
 
 在 `files` 中設定 `"environments": ["DEV", "UAT", "SIM"]`，工具會自動展開為三個環境的檔案，`{$env}` 在 `name` 和 `template` 路徑中會被替換為對應環境名稱。UAT 環境若 `newGroup=true` 會自動套用特殊 domain 邏輯。
 
-### 📄 常用模板檔案
+### 📄 常用模板檔案（v1.3.0+ 依白牌類型分類）
 
 | 模板檔案 | 用途 |
 |---------|------|
-| `NewGroup-SQL-{DEV/UAT/SIM}-template.txt` | 新建 API Group（各環境） |
-| `UpdateGroup-SQL-template.txt` | 更新現有 API Group |
-| `ApiWallet-DB-41-template.txt` | API Wallet DB-41 SQL |
-| `ApiWallet-WST.txt` | 插入 WebSiteType.java（API wallet） |
-| `NewSite-WST.txt` | 插入 WebSiteType.java（一般白牌） |
-| `ApiWalletWebSitePageTemplate.txt` | 產生 ApiWalletWebSitePage.java |
-| `DomainTypeTemplate.txt` | 產生 DomainType.java |
+| `ApiWallet/DB-01-template.txt` | API Wallet DB-01 SQL |
+| `ApiWallet/DB-01-template-New-Group.txt` | API Wallet 新建群組 DB-01 SQL |
+| `ApiWallet/DB-41-template.txt` | API Wallet DB-41 SQL |
+| `ApiWallet/WST.txt` | 插入 WebSiteType.java（API wallet） |
+| `ApiWallet/WebSitePageTemplate.txt` | 產生 ApiWalletWebSitePage.java |
+| `ApiWallet/Setting1.txt` / `Setting2.txt` | 插入 Setting.java（API wallet） |
+| `NewSite/DB-01-template.txt` | 一般白牌 DB-01 SQL |
+| `NewSite/DB-41-template.txt` | 一般白牌 DB-41 SQL |
+| `NewSite/WST.txt` | 插入 WebSiteType.java（一般白牌） |
+| `NewSite/WebSitePageTemplate.txt` | 產生 WebSitePage.java |
+| `NewSite/DomainTypeTemplate.txt` | 產生 DomainType.java |
+| `NewSite/Setting1.txt` / `Setting2.txt` | 插入 Setting.java（一般白牌） |
+| `Const.txt`（`white-label/` 根目錄） | 插入 Const.js |
+
+> `NewGroup-SQL-{DEV/UAT/SIM}-template.txt`、`UpdateGroup-SQL-template.txt` 已在 v1.3.0 移除，尚無替代模板。
 
 ---
 
@@ -143,7 +182,7 @@ project-tool.bat B                    # 工具 B: Domain Checker
 | `groupInfo.apiInfoBkIpSetId` | string | 條件必填 | API 備援設定 ID |
 | `groupInfo.backup`           | string[] | 條件必填 | 備援 domain 清單 |
 
-自定義欄位（v1.1.0+）：任意新增欄位皆自動成為 `{$欄位名}` placeholder，支援字串、數字、布林值。
+自定義欄位（v1.1.0+）：任意新增欄位皆自動成為 `{$欄位名}` placeholder，支援字串、數字、布林值（例如 `project`，見上方「用 `files[]` + 動態欄位達成路徑分類」）。
 
 ## 🗂 `files` 陣列欄位說明（v1.2.6+）
 
@@ -467,8 +506,9 @@ result/
 - 可搭配 Git commit hook 或 CI 工具自動驗證 JSON 檔案合法性
 - 新增環境時，遵循以下步驟：
   1. 在 `constant/EnvEnumType.java` 添加新的環境枚舉值
-  2. 在 `src/template/` 創建對應的 `NewGroup-SQL-{ENV}-template.txt`
+  2. 在 `src/template/white-label/{ApiWallet,NewSite}/` 底下建立對應環境的模板檔案，並在 `files[].template` 填入 `{$env}` placeholder
 - SQL 結構變更建議在模板檔案中統一修改，無需修改 Java 代碼
+- 依白牌類型分類模板/SQL 輸出路徑、或用票號當檔名前綴等需求，優先透過 `files[].location`／`files[].template`／動態自定義欄位（如 `project`）在 JSON 設定檔中處理，不需要修改 Java 代碼（見上方「模板／輸出路徑依白牌類型分類」）
 
 ### 🆕 動態字段最佳實踐（v1.1.0+）
 - **命名規範**：使用駝峰命名（如 `siteCategory` 而非 `site_category`）
@@ -492,6 +532,13 @@ result/
 ---
 
 ## 📝 版本歷史
+
+### v1.3.0 (2026-07-14)
+- 🗂 **模板目錄依白牌類型重組** - `src/template/` 下的白牌模板分類到 `white-label/ApiWallet/` 和 `white-label/NewSite/` 子目錄，`Const.txt` 留在 `white-label/` 根目錄
+  - ⚠️ 重組過程中 `NewGroup-SQL-DEV/UAT/SIM-template.txt`、`UpdateGroup-SQL-template.txt` 被移除且未搬移到新結構下，`newGroup:true` 流程若沿用舊路徑會找不到模板檔案，目前尚無替代模板
+- ✨ **新增 `ApiWallet/DB-01-template-New-Group.txt`** - API Wallet 新建群組專用的 DB-01 SQL 模板
+- ✨ **新增範例設定檔** - `src/template/whiteLabel.json`（ApiWallet 白牌完整範例）、`src/template/sample-urlChecker.json`（工具 B 範例）
+- 📚 **補充說明：模板/SQL 路徑分類、`project` 前綴的達成方式** - 依白牌類型分類模板/SQL 輸出路徑、用 `project` 當檔名前綴等效果，是透過既有的 `files[]` 動態配置（v1.2.6）與動態自定義欄位機制（v1.1.0）在 JSON 設定檔中達成，`WhiteLabelTool.java` 未變動，見「模板／輸出路徑依白牌類型分類」
 
 ### v1.2.6 (2026-04-23)
 - ✨ **`files` 動態配置陣列** - 設定檔改用 `files[]` 陣列動態定義輸出檔案，取代硬編碼的模板路徑表

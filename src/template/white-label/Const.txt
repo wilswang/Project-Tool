@@ -1,0 +1,5 @@
+WebSiteType.{$webSiteName} = {
+	"value": {$webSiteValue},
+	"shortCode": "{$webSiteName}",
+	"displayName": "{$webSiteName}"
+};

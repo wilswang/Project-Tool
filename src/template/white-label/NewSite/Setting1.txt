@@ -1,0 +1,3 @@
+
+@HttpUpdate
+public static boolean ENABLE_TS_FINANCIAL_{$webSiteName} = true;

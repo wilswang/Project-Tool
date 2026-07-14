@@ -1,0 +1,61 @@
+-- SACRIC-{$ticketNo} {$jiraSummary}, {$developer}
+UPDATE systemsetting SET jsonvalue = JSON_ARRAY_APPEND(jsonvalue, '$."44"', {$webSiteValue}), updatedate = NOW(6) WHERE syskey = 'WebSiteGroup';
+
+-- One Click Bet Delay Seconds
+UPDATE systemsetting SET updatedate = NOW(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}":"0"}') WHERE syskey = 'OneClickBetDelaySeconds';
+
+-- Bet Limit Hours
+UPDATE systemsetting SET updatedate = sysdate(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}":"-1"}') WHERE syskey = 'MarketBetLimitHours';
+
+-- live match tracker & applyBetLimitTime & applyDisableBetting & offerBetfairExchange & offerGameProduct
+INSERT INTO websitesetting (site, lmtstatus, creator, createdate, updator, updatedate, applybettingsetting, gameproductsetting,
+							freezebettingwhenwithdraw, playerneedlogin, popupmessage, mobilewebsocketsetting, sportsbookfeedingstakeratio, fromapi)
+VALUES ({$webSiteValue}, 1, 'root', sysdate(6), 'root', sysdate(6), '{
+	"applyBetLimitTime": 1,
+	"applyDisableBetting": 1,
+	"offerBetfairExchange": 0,
+	"enableDabbaModeOddsSetting": 0
+}', '{
+	"offerGameProduct": "[1,2,3,6,12,14]"
+}', 1, 0, '{
+	"mobileImgUrl": "",
+	"desktopImgUrl": "",
+	"mobileMessage": "",
+	"desktopMessage": ""
+}','{
+	"enableBetfairWebsocket": "0",
+	"enableFancybetWebsocket": "0",
+	"enableBookmakerWebsocket": "0",
+	"enableSportsbookWebsocket": "0"
+}', 1, 1);
+
+-- Mail Info
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_recipients":""}') WHERE syskey = 'MailInfo';
+
+-- API 2.0 Group : (新建)
+INSERT INTO domaingroup
+(groupname, privateipsetid, wwwgaipsetid, wwwcfipsetid, apiinfoipsetid, groupsite, updator, updatedate, issinglegroup)
+VALUES('{$group}', '{$privateIpSetId}', '{$wwwgaIpSetId}', '{$wwwcfIpSetId}', '{$apiInfoBkIpSetId}', '["{$webSiteValue}"]', 'system', NOW(6), 1);
+
+-- Add API domain name
+INSERT INTO apidomainname
+  (id, groupname, name, isactive, priority, remark, apidomaintype, updatedate, createdate)
+VALUES {$apiDomainValues}
+
+-- 包含一般白牌domain及API白牌的public domain
+INSERT INTO corsdomain (name, isactive, subdomainstatic, subdomainapi, createdate, updatedate)
+values {$corsDomainValues}
+
+-- 白牌開關by domain (包含一般白牌domain、API白牌的private及public domain) (加入 API private domain是因為/queryDomain API會檢查此setting)
+UPDATE systemsetting
+set updatedate = sysdate(6)
+  , jsonvalue  = JSON_MERGE(jsonvalue, '{ {$enableFrontendBackendSeparationByDomainValues}
+}')
+where syskey = 'EnableFrontendBackendSeparationByDomain';
+
+-- 白牌開關by domain (包含一般白牌domain、API白牌的public domain)
+UPDATE systemsetting
+set updatedate = sysdate(6)
+  , jsonvalue  = JSON_MERGE(jsonvalue, '{ {$enableDesktopFrontendBackendSeparationByDomainValues}
+}')
+where syskey = 'EnableDesktopFrontendBackendSeparationByDomain';
