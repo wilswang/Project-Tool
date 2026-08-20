@@ -538,6 +538,12 @@ result/
 
 ## 📝 版本歷史
 
+### v1.3.2 (2026-08-20)
+- ✨ **`Transformers` 新增 `SNAKE_TO_LOWER_CAMEL`** - 蛇形命名轉小駝峰（首字母小寫），`hello_world` → `helloWorld`；實作上複用 `SNAKE_TO_CAMEL` 再降首字母，行為與大駝峰一致
+  - ⚠️ 請勿與現有的 `SNAKE_TO_CAMEL_LOWER` 混淆：後者是「轉駝峰後全小寫」，`hello_world` → `helloworld`，駝峰會被壓平
+- ✅ **`PlaceholderMapperTest` 新增測試** - `testTransformers_SnakeToLowerCamel()` 涵蓋一般情形、單字元、全大寫輸入（`HELLO_BIG_WORLD` → `helloBigWorld`）、空字串與 null
+- ✨ **`WhiteLabelTool` 新增 `{$lowerCamelCase}` 佔位符** - 由 `webSiteName` 經 `SNAKE_TO_LOWER_CAMEL` 產生，與既有的 `{$className}`（大駝峰）、`{$lowerCase}`（全小寫）並列，供模板取用
+
 ### v1.3.1 (2026-07-14)
 - 🔧 **`get-issue` 查詢欄位改由設定檔控制** - `application.properties` 新增 `jira.issue.fields`，可自訂逗號分隔欄位清單；未設定或空值時，`get-issue` 不夾帶 `fields` 參數，改由 Jira 回傳完整預設欄位
 - 🔧 **`application.properties` 認證/連線 key 加上 `jira.` 前綴** - `baseUrl`/`account`/`token` 改為 `jira.baseUrl`/`jira.account`/`jira.token`，與 `jira.issue.fields` 命名風格一致並區分用途

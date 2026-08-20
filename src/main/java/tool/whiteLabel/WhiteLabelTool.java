@@ -64,6 +64,7 @@ public class WhiteLabelTool {
 			.derived("{$webSiteName}", config -> Transformers.SNAKE_TO_CAMEL_UPPER.transform(config.getWebSiteName()))
 			.derived("{$className}", config -> Transformers.SNAKE_TO_CAMEL.transform(config.getWebSiteName()))
 			.derived("{$lowerCase}", config -> Transformers.SNAKE_TO_CAMEL_LOWER.transform(config.getWebSiteName()))
+			.derived("{$lowerCamelCase}", config -> Transformers.SNAKE_TO_LOWER_CAMEL.transform(config.getWebSiteName()))
 			.derivedIf("{$enumName}",
 				config -> StringUtils.isNotBlank(config.getHost()),
 				config -> Transformers.DOT_TO_UNDERSCORE_UPPER.transform(config.getHost()))

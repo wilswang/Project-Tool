@@ -209,6 +209,16 @@ public class PlaceholderMapperTest {
 	}
 
 	@Test
+	public void testTransformers_SnakeToLowerCamel() {
+		assertEquals("helloWorld", Transformers.SNAKE_TO_LOWER_CAMEL.transform("hello_world"));
+		assertEquals("testSite", Transformers.SNAKE_TO_LOWER_CAMEL.transform("test_site"));
+		assertEquals("a", Transformers.SNAKE_TO_LOWER_CAMEL.transform("a"));
+		assertEquals("helloBigWorld", Transformers.SNAKE_TO_LOWER_CAMEL.transform("HELLO_BIG_WORLD"));
+		assertEquals("", Transformers.SNAKE_TO_LOWER_CAMEL.transform(""));
+		assertEquals("", Transformers.SNAKE_TO_LOWER_CAMEL.transform(null));
+	}
+
+	@Test
 	public void testTransformers_DotToUnderscoreUpper() {
 		assertEquals("EXAMPLE_COM", Transformers.DOT_TO_UNDERSCORE_UPPER.transform("example.com"));
 		assertEquals("SUB_DOMAIN_EXAMPLE_COM", Transformers.DOT_TO_UNDERSCORE_UPPER.transform("sub.domain.example.com"));

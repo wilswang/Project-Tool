@@ -35,6 +35,15 @@ public final class Transformers {
 	};
 
 	/**
+	 * 蛇形命名转小驼峰命名（首字母小写）
+	 * 示例: "hello_world" → "helloWorld"
+	 */
+	public static final Transformer<String> SNAKE_TO_LOWER_CAMEL =
+		SNAKE_TO_CAMEL.andThen(input -> StringUtils.isBlank(input)
+			? ""
+			: Character.toLowerCase(input.charAt(0)) + input.substring(1));
+
+	/**
 	 * 蛇形命名转驼峰命名后全大写
 	 * 示例: "hello_world" → "HELLOWORLD"
 	 */
