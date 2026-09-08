@@ -1,0 +1,24 @@
+package com.nv.apiWallet.apiaction.transfer;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+import com.nv.apiWallet.apiaction.ApiAction;
+import com.nv.commons.code.WebSiteType;
+
+public class {$className}ApiAction extends ApiAction {
+	
+	protected final Set<String> certCodeSet = new HashSet<>(Collections.singletonList("{$cert}"));
+	
+	@Override
+	public WebSiteType getWebSiteType() {
+		return WebSiteType.{$webSiteName};
+	}
+	
+	@Override
+	public Set<String> getCertifiedCodeSet() {
+		return certCodeSet;
+	}
+	
+}

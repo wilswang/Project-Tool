@@ -1,0 +1,1 @@
+API_ACTION_MAP.put(WebSiteType.{$webSiteName}, new {$className}ApiAction());

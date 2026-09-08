@@ -1,0 +1,3 @@
+
+@HttpUpdate
+public static boolean ENABLE_ELECTION_FANCY_BET_{$webSiteName} = false;

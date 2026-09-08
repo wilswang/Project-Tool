@@ -1,8 +1,8 @@
 -- SACRIC-{$ticketNo} {$jiraSummary}, {$developer}
-UPDATE systemsetting SET jsonvalue = JSON_ARRAY_APPEND(jsonvalue, '$."44"', {$webSiteValue}), updatedate = NOW(6) WHERE syskey = 'WebSiteGroup';
+UPDATE systemsetting SET jsonvalue = JSON_ARRAY_APPEND(jsonvalue, '$."44"', {$webSiteValue}), updatedate = SYSDATE(6) WHERE syskey = 'WebSiteGroup';
 
 -- One Click Bet Delay Seconds
-UPDATE systemsetting SET updatedate = NOW(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}":"0"}') WHERE syskey = 'OneClickBetDelaySeconds';
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}":"0"}') WHERE syskey = 'OneClickBetDelaySeconds';
 
 -- Bet Limit Hours
 UPDATE systemsetting SET updatedate = sysdate(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}":"-1"}') WHERE syskey = 'MarketBetLimitHours';
@@ -30,7 +30,7 @@ UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonval
 -- API 2.0 Group : (新建)
 INSERT INTO domaingroup
 (groupname, privateipsetid, wwwgaipsetid, wwwcfipsetid, apiinfoipsetid, groupsite, updator, updatedate, issinglegroup)
-VALUES('{$group}', '{$privateIpSetId}', '{$wwwgaIpSetId}', '{$wwwcfIpSetId}', '{$apiInfoBkIpSetId}', '["{$webSiteValue}"]', 'system', NOW(6), 1);
+VALUES('{$group}', '{$privateIpSetId}', '{$wwwgaIpSetId}', '{$wwwcfIpSetId}', '{$apiInfoBkIpSetId}', '["{$webSiteValue}"]', 'system', SYSDATE(6), 1);
 
 -- Add API domain name
 INSERT INTO apidomainname

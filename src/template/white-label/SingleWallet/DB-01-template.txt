@@ -1,8 +1,8 @@
 -- SACRIC-{$ticketNo} {$jiraSummary}, {$developer}
-UPDATE systemsetting SET jsonvalue = JSON_ARRAY_APPEND(jsonvalue, '$."44"', {$webSiteValue}), updatedate = NOW(6) WHERE syskey = 'WebSiteGroup';
+UPDATE systemsetting SET jsonvalue = JSON_ARRAY_APPEND(jsonvalue, '$."44"', {$webSiteValue}), updatedate = SYSDATE(6) WHERE syskey = 'WebSiteGroup';
 
 -- One Click Bet Delay Seconds
-UPDATE systemsetting SET updatedate = NOW(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}":"0"}') WHERE syskey = 'OneClickBetDelaySeconds';
+UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}":"0"}') WHERE syskey = 'OneClickBetDelaySeconds';
 
 -- Bet Limit Hours
 UPDATE systemsetting SET updatedate = sysdate(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}":"-1"}') WHERE syskey = 'MarketBetLimitHours';
@@ -27,16 +27,10 @@ VALUES ({$webSiteValue}, 1, 'root', sysdate(6), 'root', sysdate(6), '{
 -- Mail Info
 UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonvalue, '{"{$webSiteValue}_recipients":""}') WHERE syskey = 'MailInfo';
 
--- API 2.0 Group : (新建)
-INSERT INTO domaingroup
-(groupname, privateipsetid, wwwgaipsetid, wwwcfipsetid, apiinfoipsetid, groupsite, updator, updatedate, issinglegroup)
-VALUES('{$group}', '{$privateIpSetId}', '{$wwwgaIpSetId}', '{$wwwcfIpSetId}', '{$apiInfoBkIpSetId}', '["{$webSiteValue}"]', 'system', NOW(6), 1);
+-- API 2.0 Group :
+UPDATE domaingroup SET groupsite = JSON_ARRAY_APPEND(groupsite, '$',  '{$webSiteValue}') WHERE GROUPNAME = '{$group}';
 
--- Add API domain name
-INSERT INTO apidomainname
-  (id, groupname, name, isactive, priority, remark, apidomaintype, updatedate, createdate)
-VALUES {$apiDomainValues}
-
--- 包含一般白牌domain及API白牌的public domain
-INSERT INTO corsdomain (name, isactive, subdomainstatic, subdomainapi, createdate, updatedate)
-values {$corsDomainValues}
+-- API site properties :
+INSERT INTO APISITEPROPERTIES (site, propertiesname, propertiesvalue, updator, updatedate)
+values  ({$webSiteValue}, 'host', '{$apiHost}', 'system', SYSDATE(6)),
+        ({$webSiteValue}, 'securityCode', '{$cert}', 'system', SYSDATE(6));

@@ -1,0 +1,3 @@
+{$className}ApiAction {$lowerCamelCase}ApiAction = new {$className}ApiAction();
+API_ACTION_MAP.put(WebSiteType.{$webSiteName}, {$lowerCamelCase}ApiAction);
+SINGLE_WALLET_API_ACTION_MAP.put(WebSiteType.{$webSiteName}, {$lowerCamelCase}ApiAction);
