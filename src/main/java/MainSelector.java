@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 import tool.urlChecker.UrlChecker;
 import tool.whiteLabel.WhiteLabelTool;
 
@@ -12,11 +14,13 @@ public class MainSelector {
 		
 		switch (option.toUpperCase()) {
 			case "A":
-				if (args.length != 2) {
+				if (args.length < 2) {
 					System.out.println("MainSelector A, 需有第二個參數指定檔案");
+					System.out.println("使用方式: java MainSelector A <configFilePath> [envValuesFilePath]");
 					return;
 				}
-				WhiteLabelTool.main(new String[]{args[1]}); // 可傳遞額外參數
+				// 第三個參數可覆寫環境值設定檔路徑，預設為 ./config/env-values.json
+				WhiteLabelTool.main(Arrays.copyOfRange(args, 1, args.length));
 				break;
 			case "B":
 				UrlChecker.main(new String[]{});

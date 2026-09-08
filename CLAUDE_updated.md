@@ -1,3 +1,7 @@
+> ⚠️ **這份文件已過時且沒有任何地方引用它。** 內容仍描述 v1.3.0 之前的扁平模板命名
+> （`NewSite-DB-01-template.txt` 等）與 `src/main/resources/` 的腳本路徑，兩者都已不存在。
+> 請以 `README.md` 為準。
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.

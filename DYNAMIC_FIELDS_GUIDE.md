@@ -149,6 +149,23 @@ VALUES (
 
 ---
 
+## ⚠️ `envValues` 不是動態字段（v1.4.0+）
+
+`envValues` 是 `WhiteLabelConfig` 上的**宣告式字段**（`@JsonProperty("envValues")`），
+不會進入 `additionalProperties`，因此**不會**產生 `{$envValues}` placeholder。
+
+它的型別刻意用 `Map<String, Map<String, Object>>`：`PlaceholderMapper.isConfigObject` 對 `Map`
+回傳 `false`，所以自動映射會靜靜跳過整個字段 —— 與既有的 `additionalProperties` 相同待遇。
+
+`envValues` 裡的 key 會被 `EnvValuesResolver` 解析成該環境的 `{$key}` placeholder，
+路徑是「環境值解析」而不是「動態字段自動映射」。詳見 README 的「環境值外部化」章節。
+
+> 若要新增**與環境無關**的自定義 placeholder，仍然用本文件描述的動態字段機制（直接加頂層 key）。
+> 若該值**依環境而變**，要放 `envValues` 或 `config/env-values.json`，不要用 `{$keyUAT}`、`{$keySIM}`
+> 這種帶環境後綴的命名 —— 那擴不到第 4 個環境。
+
+---
+
 ## 🔧 技术实现
 
 ### 1. WhiteLabelConfig 增强

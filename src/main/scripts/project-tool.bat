@@ -27,10 +27,13 @@ echo ========================================
 java -jar "%JAR_FILE%" %*
 
 REM 檢查執行結果
-if errorlevel 1 (
+REM errorlevel 必須先存進變數：寫在 if (...) 括號區塊內的 %errorlevel% 會在 parse 期就展開，印出舊值
+set "EXIT_CODE=%errorlevel%"
+
+if not "%EXIT_CODE%"=="0" (
     echo.
     echo ========================================
-    echo ❌ 執行失敗，錯誤碼: %errorlevel%
+    echo ❌ 執行失敗，錯誤碼: %EXIT_CODE%
     echo ========================================
 ) else (
     echo.
@@ -41,3 +44,4 @@ if errorlevel 1 (
 
 echo.
 pause
+exit /b %EXIT_CODE%

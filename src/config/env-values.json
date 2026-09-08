@@ -1,0 +1,17 @@
+{
+  "DEV": {
+    "subDomainStatic": "devnginx",
+    "subDomainApi": "dev9wapi"
+  },
+  "UAT": {
+    "subDomainStatic": "tberwxsjyk",
+    "subDomainApi": "uat9wapi",
+    "extraPrivateDomains": ["cckk77.net", "cckk77.live"],
+    "extraPublicDomains": ["qqkk77.net", "qqkk77.live", "ppkk77.net"],
+    "activateOwnDomains": false
+  },
+  "SIM": {
+    "subDomainStatic": "www",
+    "subDomainApi": "saapipl"
+  }
+}

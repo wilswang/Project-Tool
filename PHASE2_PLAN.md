@@ -215,6 +215,16 @@ public class PlaceholderMapper {
 
 ### 功能 2：占位符校验工具
 
+> **📌 v1.4.0 實作狀態（2026-09-08）**
+> `util.placeholder.PlaceholderValidator` **已存在**，但只實作了本節的一小部分：
+> - ✅ 已做：**輸出端**掃描 —— 在寫檔前檢查填值後的內容有沒有殘留 `{$...}`，有殘留就不寫檔並讓整批 exit 1。
+>   使用嚴格 regex `\{\$[A-Za-z_][A-Za-z0-9_.]*\}`，刻意不匹配 MySQL JSON path 與 JSON 物件字面值。
+> - ❌ 未做：本節規劃的 **模板端**掃描（`scanTemplates`）、`ValidationReport`、`validate` CLI 命令、
+>   以及 `generateDocumentation` 自動產生 placeholder 參考文件。
+>
+> 要接續實作請**擴充既有的 `PlaceholderValidator`**，不要用別的名字重造一個。
+
+
 #### 当前问题
 
 **场景 1：占位符拼写错误**

@@ -60,6 +60,17 @@ public class WhiteLabelConfig {
 	private List<FileConfig> files;
 
 	/**
+	 * 逐單的環境值覆寫，形狀為 環境名稱 -> key/value，例如
+	 * "envValues": { "UAT": { "apiHost": "https://..." } }
+	 *
+	 * 優先序高於共用的 config/env-values.json。
+	 * 型別刻意用 Map：PlaceholderMapper.isConfigObject 對 Map 回傳 false，
+	 * 所以這個欄位會被自動映射靜靜跳過，不會產生 {$envValues} 這種無意義的 placeholder。
+	 */
+	@JsonProperty("envValues")
+	private Map<String, Map<String, Object>> envValues;
+
+	/**
 	 * 额外的动态属性（JSON 中未在类中定义的字段）
 	 * 支持在不修改类定义的情况下添加新的占位符
 	 */
@@ -164,7 +175,8 @@ public class WhiteLabelConfig {
 		return "WhiteLabelConfig{" + "sqlOnly=" + sqlOnly + ", ticketNo='" + ticketNo + '\'' + ", webSiteName='" + webSiteName + '\''
 			+ ", webSiteValue=" + webSiteValue + ", host='" + host + '\'' + ", apiWhiteLabel=" + apiWhiteLabel + ", customized=" + customized
 			+ ", jiraSummary='" + jiraSummary + '\'' + ", fixVersion='" + fixVersion + '\'' + ", developer='" + developer + '\'' + ", apiWalletInfo="
-			+ apiWalletInfo + ", additionalProperties=" + additionalProperties + ", files=" + files + '}';
+			+ apiWalletInfo + ", additionalProperties=" + additionalProperties + ", envValues=" + envValues
+			+ ", files=" + files + '}';
 	}
 	
 }

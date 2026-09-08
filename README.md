@@ -131,15 +131,74 @@ project-tool.bat B                    # 工具 B: Domain Checker
 
 ## 🌍 多環境架構
 
+環境值自 v1.4.0 起**由外部設定檔提供**（`config/env-values.json`），改值不需要重新打包 JAR。
+
 | 環境 | 代號 | 靜態資源子域名 | API 子域名 |
 |------|------|---------------|-----------|
 | 開發環境 | DEV | `devnginx` | `dev9wapi` |
 | 測試環境 | UAT | `tberwxsjyk` | `uat9wapi` |
 | 正式環境 | SIM | `www` | `saapipl` |
 
-在 `files` 中設定 `"environments": ["DEV", "UAT", "SIM"]`，工具會自動展開為三個環境的檔案，`{$env}` 在 `name` 和 `template` 路徑中會被替換為對應環境名稱。UAT 環境若 `newGroup=true` 會自動套用特殊 domain 邏輯。
+上表是 `config/env-values.json` 的預設內容，同時也是 `constant/EnvEnumType` 內建的 fallback 值。
+
+在 `files` 中設定 `"environments": ["DEV", "UAT", "SIM"]`，工具會自動展開為三個環境的檔案，`{$env}` 在 `name` 和 `template` 路徑中會被替換為對應環境名稱。
+
+### 🗄 環境值外部化（`config/env-values.json`，v1.4.0+）
+
+任何「依環境而變的值」都放這個檔，每個 key 自動成為一個 `{$key}` placeholder：
+
+```json
+{
+  "DEV": { "subDomainStatic": "devnginx",   "subDomainApi": "dev9wapi" },
+  "UAT": {
+    "subDomainStatic": "tberwxsjyk",
+    "subDomainApi": "uat9wapi",
+    "extraPrivateDomains": ["cckk77.net", "cckk77.live"],
+    "extraPublicDomains": ["qqkk77.net", "qqkk77.live", "ppkk77.net"],
+    "activateOwnDomains": false
+  },
+  "SIM": { "subDomainStatic": "www",        "subDomainApi": "saapipl"  }
+}
+```
+
+**三層優先序**（高 → 低）：
+
+1. 單號 JSON 的 `envValues` 區塊（逐單客製）
+2. 共用的 `config/env-values.json`
+3. `constant/EnvEnumType` 內建值（只有 `subDomainStatic` / `subDomainApi`）
+
+**保留字與特殊 key**：
+
+| key | 型別 | 說明 |
+|-----|------|------|
+| `env` | — | **保留字**，由工具寫入 `{$env}`，設定檔不可提供 |
+| `extraPrivateDomains` | string[] | 該環境要額外插入的 private domain（`apidomaintype` 0），預設 `[]` |
+| `extraPublicDomains` | string[] | 該環境要額外插入的 public domain（`apidomaintype` 1），預設 `[]` |
+| `activateOwnDomains` | boolean | 自家 domain 與 backup 的 `isactive` 是否開啟，預設 `true` |
+| 其他任意 key | 純量 | 自動成為 `{$key}` placeholder；不支援巢狀物件或陣列 |
+
+上面三個非純量 key **不會**變成 placeholder，它們是 `NewGroupSqlBuilder` 用來決定 `apidomainname` 要多插幾列、`isactive` 填什麼的資料。這就是舊版寫死在 `WhiteLabelTool` 裡的 `UAT_PUBLIC_DOMAIN_LIST` / `UAT_PRIVATE_DOMAIN_LIST` / `isUat` 判斷。
+
+**新增第 4 個環境**（例如 `PROD`）只要在此檔加一塊、並在 `files[].environments` 加上該名稱即可，**不需要改 Java、不需要重新打包**。
+
+**檔案缺少 / 格式錯誤的行為**：
+
+| 狀況 | 行為 |
+|------|------|
+| 檔案不存在 | 印警告，退回 `EnvEnumType` 內建值，繼續執行 |
+| JSON 解析失敗或結構不合 | **exit 1，零檔案產出** |
+| 檔案缺某個環境，但 `EnvEnumType` 有 | 印警告，用內建值 |
+| 檔案與 `EnvEnumType` 都沒有該環境 | 跳過該環境，**exit 1** |
+| `newGroup=true` 但某個環境沒有明確條目 | **exit 1，零檔案產出** —— `extraPrivateDomains` 等沒有內建 fallback，缺了會產出「看起來合法但錯誤」的 SQL |
 
 ### 📄 常用模板檔案（v1.3.0+ 依白牌類型分類）
+
+> ⚠️ **模板的權威來源是部署端 `citixchange_work/ProjectTool/template/`，不是本 repo 的 `src/template/`。**
+> JAR **不內建**任何模板（`unzip -l Project-Tool.jar | grep template` 為空），全部由 `files[].template`
+> 的相對路徑經 `new FileReader` 讀取，而工作目錄由 `project-tool.sh` 固定 cd 到 `ProjectTool/`。
+> 本 repo 的 `src/template/` 只是給本地測試用的鏡像副本，v1.4.0 已與部署端對齊一次；
+> **改模板請改部署端**，本副本若又落後，以部署端為準。
+
 
 | 模板檔案 | 用途 |
 |---------|------|
@@ -181,6 +240,7 @@ project-tool.bat B                    # 工具 B: Domain Checker
 | `groupInfo.bkIpSetId`        | string[] | 條件必填 | 備援 IP 設定 ID（需兩筆） |
 | `groupInfo.apiInfoBkIpSetId` | string | 條件必填 | API 備援設定 ID |
 | `groupInfo.backup`           | string[] | 條件必填 | 備援 domain 清單 |
+| `envValues`                  | object | 否 | 逐單的環境值覆寫，形狀 `{"<ENV>": {"<key>": "<value>"}}`，優先序高於 `config/env-values.json`（v1.4.0+，見「環境值外部化」）。這是**宣告式欄位**，不會變成 `{$envValues}` placeholder |
 
 自定義欄位（v1.1.0+）：任意新增欄位皆自動成為 `{$欄位名}` placeholder，支援字串、數字、布林值（例如 `project`，見上方「用 `files[]` + 動態欄位達成路徑分類」）。
 
@@ -219,9 +279,16 @@ White Label Generator 現在支援自訂配置檔案路徑，不再限制於預�
 
 ### 參數說明
 - `<configFilePath>`: 必填參數，指定 WhiteLabel 配置檔案的完整路徑
-- 支援相對路徑和絕對路徑
+- `[envValuesFilePath]`: 選填參數（v1.4.0+），覆寫環境值設定檔路徑，預設為 `./config/env-values.json`
+- 支援相對路徑和絕對路徑（相對路徑以工作目錄為基準，`project-tool.sh` 會先 `cd` 到工具根目錄）
 - 檔案格式必須為有效的 JSON
 - 檔案內容需符合 WhiteLabel 結構驗證要求
+
+### ⛔ 結束代碼（v1.4.0+）
+- `0`: 全部檔案產出成功
+- `1`: 環境值設定錯誤、環境名稱未知、或有檔案因未解析的 placeholder 而中止
+
+未解析的 placeholder 會**在寫檔之前**擋下，並印出檔名、行號、token 與該行原文。這讓 `white-label-process.sh` 的 `if [ $? -eq 0 ]` 能確實攔住錯誤產出，不讓 `SQL-processing.sh` 拿到壞的 `.sql`。
 
 ---
 
@@ -289,7 +356,7 @@ chmod +x project-tool.sh                      # 賦予執行權限（首次執�
 ### 📋 執行前準備
 
 1. **建置專案**: 執行 `mvn package` 產生 JAR 檔案
-2. **複製檔案**: 將 `Project-Tool.jar` 從 `target/` 複製到 `src/main/resources/`
+2. **複製檔案**: 將 `Project-Tool.jar` 從 `target/` 複製到實際部署位置（本專案為 `citixchange_work/ProjectTool/Project-Tool.jar`），並同步 `src/config/env-values.json` → `ProjectTool/config/env-values.json`
 3. **準備設定檔**: 準備對應的 JSON 設定檔
    - **工具 A**: 可使用任意檔案路徑與名稱的 WhiteLabel 設定檔（建議：`whiteLabelConfig.json`）
    - **工具 B**: 將 `checkDomain.json` 檔案放置於 `src/main/resources/` 目錄下
@@ -537,6 +604,21 @@ result/
 ---
 
 ## 📝 版本歷史
+
+### v1.4.0 (2026-09-08)
+- ✨ **環境值外部化** - 新增 `config/env-values.json`，任何依環境而變的值都改為資料；改值不需要重新打包 JAR
+  - 三層優先序：單號 `envValues` → 共用設定檔 → `EnvEnumType` 內建值
+  - 新增 `EnvValues` / `EnvValuesLoader` / `EnvValuesResolver`，以及 `EnvValuesException` / `UnknownEnvironmentException`
+  - `WhiteLabelConfig` 新增宣告式欄位 `envValues`（型別為 `Map`，因此不會被 `PlaceholderMapper` 自動映射成 placeholder）
+  - 新增第 4 個環境（如 `PROD`）只要改設定檔，不必改 `EnvEnumType`
+- ✨ **`isUat` 分支改為資料驅動** - 抽出 `NewGroupSqlBuilder`，把 `UAT_PUBLIC_DOMAIN_LIST` / `UAT_PRIVATE_DOMAIN_LIST` 與 `isactive` 規則搬進設定檔的 `extraPublicDomains` / `extraPrivateDomains` / `activateOwnDomains`
+  - 預設值 `[]` / `[]` / `true` 重現舊版 DEV / SIM 行為；UAT 的三個 key 重現舊版 UAT 行為，產出逐 byte 相同
+- 🛡 **未解析 placeholder 一律擋下** - 新增 `PlaceholderValidator` 與 `UnresolvedPlaceholderException`，`processNewFilePerEnv` / `processNewFile` / `processInsertFile` 在寫檔前掃描殘留 `{$...}`，有殘留就不寫檔並讓整批 exit 1
+  - 比對用嚴格 regex `\{\$[A-Za-z_][A-Za-z0-9_.]*\}`，刻意不匹配 MySQL JSON path（`'$."44"'`）與 JSON 物件字面值（`'{"key":1}'`），已對 339 個既有產出實測零誤判
+- 🔧 **環境改以名稱字串為鍵** - `envReplacementsCache` 改為 `Map<String, ...>`，`EnvEnumType.valueOf` 改為新的寬鬆 `EnvEnumType.findByName`
+- 🔧 **`MainSelector A` 接受第三個參數** - 可覆寫環境值設定檔路徑
+- 🔧 **`main` 在失敗時 exit 1** - 舊版即使丟出未捕捉的例外仍 exit 0，導致 shell 的 `$?` 判斷無效
+- ✅ **新增 36 個單元測試** - `EnvValuesLoaderTest`(10)、`EnvValuesResolverTest`(12)、`NewGroupSqlBuilderTest`(6)、`PlaceholderValidatorTest`(8)
 
 ### v1.3.2 (2026-08-20)
 - ✨ **`Transformers` 新增 `SNAKE_TO_LOWER_CAMEL`** - 蛇形命名轉小駝峰（首字母小寫），`hello_world` → `helloWorld`；實作上複用 `SNAKE_TO_CAMEL` 再降首字母，行為與大駝峰一致
