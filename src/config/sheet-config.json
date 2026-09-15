@@ -1,0 +1,37 @@
+{
+  "credentialPath": "./config/service-account.json",
+  "applicationName": "Project-Tool Sheet Reader",
+  "defaultTarget": "api20-domain",
+  "targets": {
+    "api20-domain": {
+      "_comment": "spreadsheetId 刻意留空以保持彈性：請在本機填入，或每次用 --spreadsheetId 指定。check-auth 不需要它",
+      "spreadsheetId": "",
+      "tab": "API 2.0Domain配置_20260814",
+      "startRow": 4,
+      "endRow": null,
+      "valueRenderOption": "FORMATTED_VALUE",
+      "groupInfo": {
+        "groupCodeColumn": "B",
+        "maxRowsPerGroup": 5,
+        "privateIpSetIdColumn": "H",
+        "privateIpColumns": [
+          "J",
+          "K"
+        ],
+        "bkIpSetIdColumn": "M",
+        "bkIpSetIdWafNameColumn": "N",
+        "apiInfoBkIpSetIdColumn": "S",
+        "backupColumns": [
+          "U",
+          "V",
+          "W",
+          "X",
+          "Y"
+        ],
+        "emptyMarkers": [
+          "-"
+        ]
+      }
+    }
+  }
+}

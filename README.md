@@ -1,9 +1,10 @@
 # Project Tool 工具說明
 
-這是一個多功能 Java 工具集，包含三個主要功能：
+這是一個多功能 Java 工具集，包含四個主要功能：
 - **工具 A (White Label Generator)**: 根據 JSON 設定檔（含 `files` 動態配置陣列），自動產出 SQL 檔案與對應的 Java/JS 程式碼，支援多環境展開
 - **工具 B (Domain Checker)**: 根據 `checkDomain.json` 的設定，批次檢查網域連線狀態
 - **工具 C (Jira Tool)**: Jira API 整合工具，支援 issue 查詢、留言、狀態轉換等操作
+- **工具 D (Sheet Tool)**: 用 service account 讀取 Google 試算表，主要用途是查詢 API 2.0 群組的 `groupInfo`（v1.5.0+）
 
 ## 📚 相關文檔
 
@@ -22,6 +23,7 @@
 # Windows
 project-tool.bat A <configFilePath>   # 工具 A: White Label Generator
 project-tool.bat B                    # 工具 B: Domain Checker
+project-tool.bat D <command> [選項]    # 工具 D: Sheet Tool
 # 工具 C 使用 java -jar 直接執行，詳見下方說明
 ```
 
@@ -29,8 +31,11 @@ project-tool.bat B                    # 工具 B: Domain Checker
 # Mac / Linux
 ./project-tool.sh A <configFilePath>  # 工具 A: White Label Generator
 ./project-tool.sh B                   # 工具 B: Domain Checker
+./project-tool.sh D <command> [選項]   # 工具 D: Sheet Tool
 # 工具 C 使用 java -jar 直接執行，詳見下方說明
 ```
+
+> 代號 `C` 保留給 Jira Tool（以 `java -cp` 直接呼叫），所以 Sheet Tool 用 `D`。
 
 ---
 
@@ -551,6 +556,132 @@ result/
 
 ---
 
+## 📊 工具 D: Sheet Tool（v1.5.0+）
+
+用 Google service account 讀取試算表。主要用途是查詢 **API 2.0 群組的 `groupInfo`** ——
+`privateIpSetId` / `privateIp` / `bkIpSetId` / `apiInfoBkIpSetId` / `backup`，
+產出可直接貼進白牌單 JSON 的 `apiWalletInfo.groupInfo`。
+
+在這之前這些值是人工從試算表抄進 `ProjectTool/task/api-2.0-group-info.md` 的快照，
+抄錯或漏抄都曾造成產出錯誤的 SQL 而 step 3／step 4 仍回報成功。
+
+### 📋 使用方式
+
+```bash
+# 透過 MainSelector
+./project-tool.sh D group-info A69
+
+# 或直接呼叫（腳本用這種）
+java -cp Project-Tool.jar tool.sheet.SheetTool group-info A69
+
+# 顯示說明
+java -cp Project-Tool.jar tool.sheet.SheetTool --help
+```
+
+### 🔧 可用命令
+
+| 命令 | 說明 |
+|---|---|
+| `check-auth` | 驗證憑證。**不碰任何試算表**，所以不需要 spreadsheetId |
+| `list-tabs` | 列出所有分頁，並檢查設定檔的 `tab` 是否逐字相符 |
+| `read-tab` | 讀整個分頁，可用 `--max-rows` 限制 |
+| `read-columns` | 讀指定欄位，欄位用字母指定 |
+| `group-info <code>` | 查詢群組的 `groupInfo`，**stdout 只有純 JSON**（狀態走 stderr，可直接 pipe） |
+
+共通選項：`--config` / `--credential` / `--target` / `--spreadsheetId` / `--tab` /
+`--columns` / `--rows <start:end>` / `--max-rows` / `--format table|tsv|json` /
+`-t`（印出解析後的 range 與每格 backup 的來源）/ `-h`。
+
+欄位一律用**字母**指定，範圍用 `-` 或 `:`：`H`、`J-K`、`U:V`、`B,H,J-K,M,S,U-Y`。
+
+### ⚙️ 配置檔案
+
+**`config/sheet-config.json`**（進版控）
+
+```json
+{
+  "credentialPath": "./config/service-account.json",
+  "applicationName": "Project-Tool Sheet Reader",
+  "defaultTarget": "api20-domain",
+  "targets": {
+    "api20-domain": {
+      "spreadsheetId": "<試算表 ID>",
+      "tab": "API 2.0Domain配置_20260814",
+      "startRow": 4,
+      "endRow": null,
+      "valueRenderOption": "FORMATTED_VALUE",
+      "groupInfo": {
+        "groupCodeColumn": "B",
+        "maxRowsPerGroup": 5,
+        "privateIpSetIdColumn": "H",
+        "privateIpColumns": ["J", "K"],
+        "bkIpSetIdColumn": "M",
+        "bkIpSetIdWafNameColumn": "N",
+        "apiInfoBkIpSetIdColumn": "S",
+        "backupColumns": ["U", "V", "W", "X", "Y"],
+        "emptyMarkers": ["-"]
+      }
+    }
+  }
+}
+```
+
+- `targets` 是具名字典，加第二張表不用改結構；`defaultTarget` 讓常用的那個不必打 `--target`
+- `valueRenderOption` 用 `FORMATTED_VALUE` 是刻意的 —— `UNFORMATTED_VALUE` 會把數字回成
+  `Double`（`1.0E10` 這種形式），而這個工具要的是人在畫面上看到的字
+- `bkIpSetIdWafNameColumn` 是選用的交叉驗證：第 1 列該是 `*-GA-*`、第 2 列該是 `*-CF-*`，
+  不符只警告不擋
+- **路徑解析**：依序找 `./config/<檔名>` → `./src/config/<檔名>`。
+  部署期 CWD 是 `ProjectTool/`（命中前者），開發期是 repo 根目錄（退到後者）。
+  可用 `-DprojectTool.configDir=<dir>` 覆寫
+
+**`config/service-account.json`**（**絕不進版控**）
+
+GCP 下載的 service account 金鑰。兩個 repo 的 `.gitignore` 都已擋下，
+範本見 `config/service-account.sample.json`。
+
+### 🗺 試算表結構與對應規則
+
+一個群組佔**連續數列**（多數 2 列，但不固定；實測有 1 列與 3 列的例子）。
+定位方式是「找 `B` 欄等於該代號的**連續**列」—— B 欄在群組的每一列都有值，
+不連續的是**代號的排列**（A04 → A05 → A07 → …）。
+
+| `groupInfo` 欄位 | 來源 |
+|---|---|
+| `privateIpSetId` | `H`（群組第 1 列） |
+| `privateIp` | `J` / `K`（群組第 1 列） |
+| `bkIpSetId` | `M`，依列順序（第 1 列 GA、第 2 列 CF） |
+| `apiInfoBkIpSetId` | `S`（群組第 1 列） |
+| `backup` | `U`~`Y`，**欄優先、欄內依列**：U1 → U2 → V1 → V2 → W1 → … |
+
+**單一 cell 內含多個網域且數量不固定**，取出後要先切分（換行／逗號／分號皆可）再串接。
+cell 內容為 `-` 一律視為無資料，整格跳過。
+
+### 🔒 安全性
+
+- 只申請 `spreadsheets.readonly` scope
+- 啟動時檢查憑證是否**已被 git 追蹤**，是就擋下並 exit 1 ——
+  `.gitignore` 對已追蹤的檔案無效，這是唯一真正防得住誤 commit 的機制
+- 檢查檔案權限，group/other 可讀就提示 `chmod 600`
+- 讀取前確認內容是 service account 金鑰（有 `type` 與 `client_email`）
+- 輸出只帶 `client_email` / `project_id` / `private_key_id` 末 6 碼，
+  **結構上不持有** `private_key` 與 access token
+
+### ⛔ 結束代碼
+
+與工具 C 不同，**任何錯誤都會 `System.exit(1)`**，讓 shell 的 `$?` 判斷得出來。
+
+### 💡 常見問題
+
+| 症狀 | 原因 |
+|---|---|
+| `Google Sheets API 尚未啟用 (403)` | GCP 專案沒開 Sheets API，照訊息裡的 console 連結啟用 |
+| `讀取被拒 (403)` | 試算表沒共用給 service account。訊息會印出要加的 email |
+| `範圍解析失敗 (400)` | 分頁名對不上。先跑 `list-tabs` 看線上的實際名稱 |
+| `找不到試算表 (404)` | spreadsheetId 錯，或該檔是 Excel 原生格式（需先轉成 Google 試算表） |
+
+---
+
 ## 🔍 驗證與容錯
 
 ### 工具 A (White Label Generator)
@@ -601,9 +732,37 @@ result/
 - **API 整合**: 可作為 CI/CD 流程的一部分，自動化 issue 管理
 - **擴展性**: 新增 transition 狀態時只需修改 `JiraTransitionId` enum
 
+### 工具 D (Sheet Tool)
+- **憑證絕不進版控**: 只放 `config/service-account.json`，兩個 repo 的 `.gitignore` 都已擋下；
+  工具啟動時還會主動檢查該檔是否已被 git 追蹤
+- **先 `check-auth` 再查資料**: 它不碰試算表，可以把「憑證有問題」與「試算表沒共用」分開判斷
+- **換試算表先跑 `list-tabs`**: 分頁名必須逐字相符（注意空白數量與全形／半形）
+- **欄位對應放設定檔、走訪規則放程式**: 欄位字母搬動是常見變化，
+  但 backup 的「欄優先、欄內依列」與 cell 內切分是演算法，寫進 JSON 只會變成難讀的 schema
+- **改動對應規則後，用 A61~A69 九組回歸**: `task/api-2.0-group-info.md` 有九組人工核對過的值，
+  是現成的黃金基準
+
 ---
 
 ## 📝 版本歷史
+
+### v1.5.0 (2026-09-11)
+- ✨ **新增工具 D (Sheet Tool)** - 用 Google service account 讀取試算表，
+  `group-info <代號>` 直接產出可貼進白牌單 JSON 的 `apiWalletInfo.groupInfo`
+  - 子指令 `check-auth` / `list-tabs` / `read-tab` / `read-columns` / `group-info`
+  - 新增 `config/sheet-config.json`（進版控）與 `config/service-account.sample.json`（範本）
+  - 掛在 `MainSelector` 的 `D`（`C` 已保留給 Jira Tool）
+- 🛡 **憑證防呆** - 啟動時檢查憑證是否已被 git 追蹤（是就 exit 1）、檔案權限過寬則警告、
+  內容不是 service account 金鑰則明確報錯；摘要結構上不持有 `private_key` 與 access token
+- 🔧 **`GroupInfo` 加上 `@JsonPropertyOrder`** - 釘死序列化順序與白牌單 JSON 一致，
+  產出可直接複製貼上；只影響輸出順序，不影響反序列化
+- 🔧 **新增 6 個 Google 相依並明確 pin 版本** - `google-api-services-sheets`、`google-api-client`、
+  `google-auth-library-oauth2-http`、`google-http-client(-gson)`、`guava`。
+  打包方式不變（實測依賴閉包無簽章 jar、無 `META-INF/services` 撞名），fat jar 由 7.8MB 增為約 14MB
+- 🔧 **補上 `project.build.sourceEncoding=UTF-8`** - 原本靠平台預設編碼
+- ✅ **新增 89 個單元測試** - `A1RangeBuilderTest`(25)、`GroupInfoMapperTest`(31)、
+  `SheetConfigLoaderTest`(13)、`SheetValuesTest`(10)、`ConfigPathResolverTest`(10)；
+  另以 A61~A69 九組對 `task/api-2.0-group-info.md` 做端到端比對，9/9 逐字相同
 
 ### v1.4.0 (2026-09-08)
 - ✨ **環境值外部化** - 新增 `config/env-values.json`，任何依環境而變的值都改為資料；改值不需要重新打包 JAR

@@ -8,9 +8,16 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
+/**
+ * 序列化順序刻意釘死成與白牌單 JSON、以及 task/api-2.0-group-info.md 的區塊一致，
+ * 讓 SheetTool 的 group-info 產出可以直接複製貼上、不用重排。
+ * 只影響輸出順序，不影響反序列化。
+ */
 @Data
+@JsonPropertyOrder({ "privateIpSetId", "privateIp", "bkIpSetId", "apiInfoBkIpSetId", "backup" })
 public class GroupInfo {
 	
 	@NotBlank(message = "privateIpSetId 不可為空")

@@ -1,5 +1,6 @@
 import java.util.Arrays;
 
+import tool.sheet.SheetTool;
 import tool.urlChecker.UrlChecker;
 import tool.whiteLabel.WhiteLabelTool;
 
@@ -25,9 +26,13 @@ public class MainSelector {
 			case "B":
 				UrlChecker.main(new String[]{});
 				break;
+			case "D":
+				// 子指令與選項全部往下傳，SheetTool 自己解析（無參數時會印 usage）
+				SheetTool.main(Arrays.copyOfRange(args, 1, args.length));
+				break;
 			default:
 				System.out.println("未知選項: " + option);
-				System.out.println("使用方式: java MainSelector [A|B]");
+				System.out.println("使用方式: java MainSelector [A|B|D]");
 				break;
 		}
 	}
