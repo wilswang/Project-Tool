@@ -198,11 +198,12 @@ project-tool.bat D <command> [選項]    # 工具 D: Sheet Tool
 
 ### 📄 常用模板檔案（v1.3.0+ 依白牌類型分類）
 
-> ⚠️ **模板的權威來源是部署端 `citixchange_work/ProjectTool/template/`，不是本 repo 的 `src/template/`。**
+> ⚠️ **模板的權威來源是本 repo 的 `src/template/`。**（v1.5.4 起；在那之前是部署端
+> `citixchange_work/ProjectTool/template/`，方向已經反過來。）
 > JAR **不內建**任何模板（`unzip -l Project-Tool.jar | grep template` 為空），全部由 `files[].template`
 > 的相對路徑經 `new FileReader` 讀取，而工作目錄由 `project-tool.sh` 固定 cd 到 `ProjectTool/`。
-> 本 repo 的 `src/template/` 只是給本地測試用的鏡像副本，v1.4.0 已與部署端對齊一次；
-> **改模板請改部署端**，本副本若又落後，以部署端為準。
+> 部署端的 `ProjectTool/template/` 由 `script/build-dist.sh` 從 `src/template/` 打包產生，
+> **不再進 citixchange 的版控**，所以改模板一律改這裡。
 
 
 | 模板檔案 | 用途 |
@@ -765,6 +766,33 @@ cell 內容為 `-` 一律視為無資料，整格跳過。
 ---
 
 ## 📝 版本歷史
+
+### v1.5.4 (2026-09-15)
+- 📦 **本 repo 成為部署內容的唯一權威來源** - 在這之前只存在於部署端
+  `citixchange_work/ProjectTool/` 的東西全部搬進來：白牌編排腳本
+  (`white-label-process.sh` / `.ps1`、`SQL-processing.sh` / `.bat`)、
+  `task/white-label-mapping-rule.md`、`docs/` 6 個檔、`template/white-label/RacingOnly/` 5 個檔，
+  以及 13 個已分歧模板的較新版本。`src/main/scripts/project-tool.sh` 原本寫死
+  `Project-Tool-1.1.1-...jar`，一併以部署端的版本覆蓋
+  - ⚠️ 方向反轉：v1.4.0~v1.5.3 期間權威來源是部署端，**現在起改模板一律改 `src/template/`**
+- ✨ **新增 `script/build-dist.sh`** - 產出可直接解壓到 citixchange 專案底下使用的
+  `dist-out/ProjectTool-v<version>.zip`（zip 不進版控，需要時現產）
+  - **白名單逐項複製，不用 `zip -r`** —— 部署端的工作目錄裡有真實金鑰、填了 token 的
+    `application.properties`、以及指向 `agent-output/` 的 symlink，靠 exclude 清單擋
+    只要漏一個就外流，白名單則是預設不放行
+  - 打包前對 staging 做安全檢查：出現真實 service account 金鑰、
+    `jira.token` / `jira.account` 非空、殘留產出目錄或 symlink → **exit 1 且不產生壓縮檔**
+  - 強制 `.sh` 為 LF（citixchange 的 `.gitattributes` 在脫離版控後不再適用，
+    CRLF 的 `.sh` 在 Linux/WSL 會 `bad interpreter`）
+  - jar 版本與 `pom.xml` 不一致就中止，避免包到上一版
+- ✨ **新增 `dist/README.md`** - 給解壓縮的人看的簡易說明（安裝、填憑證、怎麼跑、出錯看哪）。
+  完整的 917 行 README 留在 repo，不進壓縮檔；簡易版刻意不含版本歷史，
+  所以不需要隨每次發版更新
+- 🐛 **白牌流程 step 6 的 pathspec** - `git add ProjectTool/task src/` 改為 `git add src/`。
+  ProjectTool 移出 citixchange 版控後，前者會讓 `git add` 回非零，
+  而腳本檢查的是 `git commit` 的退出碼，失敗會被靜靜吞掉
+- 🔧 **同步開發期用的 `template/jira/enhanced-search.json`** - 它與 `src/template/jira/` 的
+  版本不一致，而程式用 `./template/jira/` 這個相對路徑
 
 ### v1.5.3 (2026-09-15)
 - 🐛 **`bkIpSetId` 長度守衛** - `NewGroupSqlBuilder` 原本寫成

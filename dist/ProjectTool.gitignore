@@ -1,0 +1,11 @@
+# Tool-generated output
+result/
+log/
+sample/
+
+# Google service account credentials — 絕不進版控
+service-account.json
+**/service-account.json
+*service-account*.json
+# 例外：範本檔（只有欄位名與 <REPLACE_ME>，無實際憑證）要進版控
+!**/service-account.sample.json

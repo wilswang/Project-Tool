@@ -30,3 +30,4 @@ UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonval
 -- API 2.0 Group :
 UPDATE domaingroup SET groupsite = JSON_ARRAY_APPEND(groupsite, '$',  '{$webSiteValue}') WHERE GROUPNAME = '{$group}';
 
+-- SACRIC-{$ticketNo} {$jiraSummary}, end

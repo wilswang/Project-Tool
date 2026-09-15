@@ -40,3 +40,5 @@ VALUES {$apiDomainValues}
 -- 包含一般白牌domain及API白牌的public domain
 INSERT INTO corsdomain (name, isactive, subdomainstatic, subdomainapi, createdate, updatedate)
 values {$corsDomainValues}
+
+-- SACRIC-{$ticketNo} {$jiraSummary}, end

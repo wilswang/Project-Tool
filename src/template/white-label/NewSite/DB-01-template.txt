@@ -45,3 +45,4 @@ UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonval
 INSERT INTO corsdomain (name, isactive, subdomainstatic, subdomainapi, createdate, updatedate)
 values {$corsDomainValues};
 
+-- SACRIC-{$ticketNo} {$jiraSummary}, end

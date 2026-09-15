@@ -1,0 +1,101 @@
+package com.nv.commons.website.page;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import com.nv.commons.code.EventType;
+import com.nv.commons.dto.Account;
+import com.nv.commons.model.Setting;
+
+public class {$className}WebSitePage extends WebSitePage {
+
+	private final Set<String> functionSet = new HashSet<>();
+	private final Set<EventType> forbiddenEventTypes = new HashSet<>();
+	private final List<EventType> sortingEventTypes = new ArrayList<>();
+
+	public {$className}WebSitePage() {
+		forbiddenEventTypes.add(EventType.CRICKET);
+		forbiddenEventTypes.add(EventType.SOCCER);
+		forbiddenEventTypes.add(EventType.TENNIS);
+		forbiddenEventTypes.add(EventType.E_SOCCER);
+		forbiddenEventTypes.add(EventType.BASKETBALL);
+		forbiddenEventTypes.add(EventType.FANCYBET);
+		forbiddenEventTypes.add(EventType.KABADDI);
+		forbiddenEventTypes.add(EventType.ELECTION);
+		forbiddenEventTypes.add(EventType.RUGBY_UNION);
+		forbiddenEventTypes.add(EventType.AMERICAN_FOOTBALL);
+		forbiddenEventTypes.add(EventType.POLITICS);
+		forbiddenEventTypes.add(EventType.VIRTUAL_CRICKET);
+
+		sortingEventTypes.add(EventType.HORSE_RACING);
+		sortingEventTypes.add(EventType.GREYHOUND_RACING);
+
+		functionSet.add("menuHome");
+		functionSet.add("menuInPlay");
+		functionSet.add("menuMultiMarkets");
+		functionSet.add("menuResult");
+
+		// agent
+		functionSet.add("betListTsBinary");
+		functionSet.add("betListLiveTsBinary");
+	}
+
+
+	@Override
+	public boolean isForbiddenFunction(String functionName) {
+		return functionSet.contains(functionName);
+	}
+
+	@Override
+	public boolean isForbiddenEventType(EventType eventType, Account account) {
+		return isContainsForbiddenEventType(eventType, this.forbiddenEventTypes);
+	}
+
+	@Override
+	public boolean isEnableTsFinancial() {
+		return Setting.ENABLE_TS_FINANCIAL && Setting.ENABLE_TS_FINANCIAL_{$webSiteName};
+	}
+
+	@Override
+	public boolean isEnableElectionFancyBet() {
+		return Setting.ENABLE_ELECTION_FANCY_BET && Setting.ENABLE_ELECTION_FANCY_BET_{$webSiteName};
+	}
+
+	@Override
+	public List<EventType> getSortingEventTypes(boolean isMobile) {
+		return this.sortingEventTypes;
+	}
+
+	@Override
+	public boolean isCheckBetLimitTime() {
+		// 預設關閉吃 MARKET_BET_LIMIT_HOURS 設定
+		return Setting.ENABLE_{$webSiteName}_BET_LIMIT_TIME_SKYINPLAY_BOOK_MODE;
+	}
+
+	@Override
+	public boolean isRacingWebSite() {
+		return true;
+	}
+
+	@Override
+	public boolean isEnableRacingWebSiteHorsePlayLay() {
+		return Setting.ENABLE_{$webSiteName}_LAY_HORSE;
+	}
+
+	@Override
+	public boolean isEnableRacingWebSiteGreyhoundPlayLay() {
+		return Setting.ENABLE_{$webSiteName}_LAY_GREYHOUNDRACING;
+	}
+
+	@Override
+	public boolean isDisbleRacingWebSiteSelectionsOddBookSuspend() {
+		return Setting.ENABLE_{$webSiteName}_DISABLE_SELECTIONS_ODDS_BOOKSUSPEND;
+	}
+
+	@Override
+	public boolean isApiShowPartialDeal() {
+		return true;
+	}
+}

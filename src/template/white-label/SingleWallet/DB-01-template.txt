@@ -34,3 +34,10 @@ UPDATE domaingroup SET groupsite = JSON_ARRAY_APPEND(groupsite, '$',  '{$webSite
 INSERT INTO APISITEPROPERTIES (site, propertiesname, propertiesvalue, updator, updatedate)
 values  ({$webSiteValue}, 'host', '{$apiHost}', 'system', SYSDATE(6)),
         ({$webSiteValue}, 'securityCode', '{$cert}', 'system', SYSDATE(6));
+
+-- 新增 WICKETSPRO_AM websitegroupmember
+SET
+@gid_WICKETSPRO_AM = (SELECT id FROM websitegroup WHERE groupname = 'WICKETSPRO_AM');
+INSERT INTO websitegroupmember (id, groupid, websiteunique, createdate, updatedate)
+VALUES (websitegroupmember_id_seq_nextval(), @gid_WICKETSPRO_AM, {$webSiteValue}, sysdate(6), sysdate(6));
+-- SACRIC-{$ticketNo} {$jiraSummary}, end

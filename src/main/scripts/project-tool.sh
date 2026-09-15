@@ -1,14 +1,16 @@
 #!/bin/bash
- cd "$(dirname "$0")"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+TOOL_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$TOOL_DIR"
 
-TARGET_DIR="./result"
+TARGET_DIR="$TOOL_DIR/result"
 
 # 檢查是否存在，否則建立
 if [ ! -d "$TARGET_DIR" ]; then
   echo "📁 建立資料夾 $TARGET_DIR"
   mkdir -p "$TARGET_DIR"
 fi
-JAR_FILE="./Project-Tool-1.1.1-jar-with-dependencies.jar"
+JAR_FILE="$TOOL_DIR/Project-Tool.jar"
 
 if [ ! -f "$JAR_FILE" ]; then
   echo "❌ JAR 檔案不存在，請先執行 'mvn package'"

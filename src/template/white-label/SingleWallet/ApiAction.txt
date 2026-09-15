@@ -16,7 +16,7 @@ public class {$className}ApiAction extends SingleWalletApiAction {
 
 	@Override
 	public WebSiteType getWebSiteType() {
-		return WebSiteType.AHC;
+		return WebSiteType.{$webSiteName};
 	}
 
 	@Override

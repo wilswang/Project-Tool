@@ -2,7 +2,7 @@
 {$webSiteName}({$webSiteValue}, "{$webSiteName}", "{$webSiteName}", {$className}DomainType.class, WicketsProCountryType.class, {$className}WebSitePage.class) {
 	@Override
 	public String getWebSiteFavicon(String... apiSite) {
-		return "/favicon_{$lowerCase}.ico";
+		return "/favicon_{$cssName}.ico";
 	}
 
 	@Override

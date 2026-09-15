@@ -21,3 +21,6 @@ service-account.json
 *service-account*.json
 # 例外：範本檔（只有欄位名與 <REPLACE_ME>，無實際憑證）要進版控
 !**/service-account.sample.json
+
+# 打包產物（zip 不進版控，需要時用 script/build-dist.sh 現產）
+dist-out/

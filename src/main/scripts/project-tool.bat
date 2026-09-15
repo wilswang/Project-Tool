@@ -1,9 +1,12 @@
 @echo off
 chcp 65001 >nul
-REM 切換到此批次檔所在的目錄
-cd /d "%~dp0"
+REM 設定路徑
+set "SCRIPT_DIR=%~dp0"
+set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+for %%I in ("%SCRIPT_DIR%\..\..") do set "TOOL_DIR=%%~fI"
+cd /d "%TOOL_DIR%"
 
-set TARGET_DIR=result
+set "TARGET_DIR=%TOOL_DIR%\result"
 
 REM 檢查資料夾是否存在，否則建立
 if not exist "%TARGET_DIR%" (
@@ -11,7 +14,7 @@ if not exist "%TARGET_DIR%" (
     mkdir "%TARGET_DIR%"
 )
 
-set JAR_FILE=Project-Tool-1.1.1-jar-with-dependencies.jar
+set "JAR_FILE=%TOOL_DIR%\Project-Tool.jar"
 
 REM 檢查 JAR 是否存在
 if not exist "%JAR_FILE%" (

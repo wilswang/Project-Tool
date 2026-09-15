@@ -10,13 +10,13 @@ UPDATE systemsetting SET updatedate = sysdate(6), jsonvalue = JSON_MERGE(jsonval
 -- live match tracker & applyBetLimitTime & applyDisableBetting & offerBetfairExchange & offerGameProduct
 INSERT INTO websitesetting (site, lmtstatus, creator, createdate, updator, updatedate, applybettingsetting, gameproductsetting,
 							freezebettingwhenwithdraw, playerneedlogin, popupmessage, sportsbookfeedingstakeratio, fromapi)
-VALUES ({$webSiteValue}, 1, 'root', sysdate(6), 'root', sysdate(6), '{
+VALUES ({$webSiteValue}, 0, 'root', sysdate(6), 'root', sysdate(6), '{
 	"applyBetLimitTime": 1,
-	"applyDisableBetting": 1,
-	"offerBetfairExchange": 0,
+	"applyDisableBetting": 0,
+	"offerBetfairExchange": 1,
 	"enableDabbaModeOddsSetting": 0
 }', '{
-	"offerGameProduct": "[1,2,3,6,12,14]"
+	"offerGameProduct": "[1,2,6,12]"
 }', 1, 0, '{
 	"mobileImgUrl": "",
 	"desktopImgUrl": "",

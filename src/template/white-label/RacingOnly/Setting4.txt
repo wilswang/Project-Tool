@@ -1,0 +1,6 @@
+
+@HttpUpdate
+public static boolean ENABLE_{$webSiteName}_LAY_HORSE = false;
+
+@HttpUpdate
+public static boolean ENABLE_{$webSiteName}_LAY_GREYHOUNDRACING = true;

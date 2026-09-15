@@ -1,12 +1,9 @@
 
 {$webSiteName}({$webSiteValue}, "{$webSiteName}", "{$webSiteName}", WicketsProDomainType.class, WicketsProCountryType.class, {$className}WebSitePage.class) {
-		
-	protected final Set<String> certCodeSet = new HashSet<>(Collections.singletonList("{$cert}"));
-	protected final ApiAction apiAction = null;
 
 	@Override
 	public String getWebSiteFavicon(String... apiSite) {
-		return "/favicon_wicketspro.ico";
+		return "/favicon_{$cssName}.ico";
 	}
 
 	@Override
@@ -16,7 +13,7 @@
 
 	@Override
 	public String getWebSiteCssName(String... args) {
-		return "wicketspro";
+		return "{$cssName}";
 	}
 
 },
