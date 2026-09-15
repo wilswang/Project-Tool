@@ -30,7 +30,7 @@ Based on input JIRA info, follow below JSON Field Mapping rule to create JSON fi
 
 - **project**: SACRIC-XXX → "SACRIC" (prefix before the hyphen)
 - **ticketNo**: SACRIC-XXX → "XXX"
-- **webSiteValue**: Next available value 534 — assign this exact number to this ticket. Copy it as-is: do not calculate, do not add anything to it, do not reuse a number from an earlier ticket. ⚠️ Auto-updated by step 3, do not modify manually
+- **webSiteValue**: Next available value 534 — assign this exact number to this ticket. Copy it as-is: do not calculate, do not add anything to it, do not reuse a number from an earlier ticket. ⚠️ The number above is derived from `WebSiteType.java` and rewritten into this file by step 2 before you read it, so it is always current — do not modify it manually, and do not fall back to any other source
 - **webSiteName**: Extract from summary (regular) or description (API)
 - **jiraSummary**: Full ticket summary content
 - **apiWhiteLabel**: 

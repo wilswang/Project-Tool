@@ -546,6 +546,62 @@ get_website_type_file() {
     echo "$PROJECT_ROOT/src/main/java/com/nv/commons/code/WebSiteType.java"
 }
 
+# 站台編號的保留號段，推導下一個 webSiteValue 時要排除。
+# AHC(999) / AHCHD(1000) 不是白牌流程依序配發的編號，ACCOUNTING(99) 是後台站台。
+# 這份名單與 citixchange 的 TestWebSiteTypeRegistry 一致，改動時兩邊要一起改
+RESERVED_WEBSITE_NAMES='AHC|AHCHD|ACCOUNTING'
+
+# 從 WebSiteType.java 推導下一個可用的 webSiteValue。
+#
+# 以前這個數字只存在 task/white-label-mapping-rule.md 裡，靠 step 3 回寫維護、
+# 靠 citixchange 的版控共享。ProjectTool 移出版控之後那份檔案變成本機檔，
+# 剛解壓縮的人拿到的是打包當下凍住的數字 —— 而 step 2 會無條件照抄它。
+# 所以改成每次都從真正定義那些編號的地方即時推導。
+#
+# 找不到 WebSiteType.java 時回傳空字串，由呼叫端決定要不要退回檔案裡的值
+get_next_webSiteValue() {
+    local website_type_file=$(get_website_type_file)
+
+    if [ ! -f "$website_type_file" ]; then
+        return 0
+    fi
+
+    local max_value=$(grep -oE '^[[:space:]]*[A-Z0-9_]+\([0-9]+, "' "$website_type_file" \
+        | sed -E 's/^[[:space:]]*([A-Z0-9_]+)\(([0-9]+).*/\2 \1/' \
+        | grep -vE " (${RESERVED_WEBSITE_NAMES})$" \
+        | sort -rn \
+        | head -1 \
+        | awk '{print $1}')
+
+    if [ -z "$max_value" ]; then
+        return 0
+    fi
+
+    echo $((max_value + 1))
+}
+
+# 讓 mapping rule 裡的 webSiteValue 與 WebSiteType.java 一致後，才餵給 step 2。
+# 只在推導得出結果時才覆寫；推導不出來就沿用檔案裡的值並警告
+sync_webSiteValue_from_website_type() {
+    local derived=$(get_next_webSiteValue)
+    local current=$(grep -oE '\*\*webSiteValue\*\*: Next available value [0-9]+' "$CLAUDE_MD" \
+        | grep -oE '[0-9]+$')
+
+    if [ -z "$derived" ]; then
+        echo_critical "${YELLOW}⚠️  找不到 WebSiteType.java，webSiteValue 沿用 mapping rule 的 ${current:-未知}${NC}"
+        echo_critical "${YELLOW}   若這份 ProjectTool 是剛解壓縮的，那個數字可能已經過期${NC}"
+        return 0
+    fi
+
+    if [ "$derived" = "$current" ]; then
+        echo_verbose "webSiteValue: ${derived}（與 WebSiteType.java 一致）"
+        return 0
+    fi
+
+    echo_critical "${YELLOW}⚠️  webSiteValue 已依 WebSiteType.java 校正: ${current:-未知} → ${derived}${NC}"
+    update_webSiteValue_in_mapping_rule "$derived"
+}
+
 # 找出 WebSiteType 內重複的 webSiteValue
 # 取每個 enum 條目的第一個參數（site 編號），列出出現超過一次的值
 # 無重複時回傳空字串
@@ -656,6 +712,10 @@ execute_step_2() {
 IMPORTANT: The Cert code has been pre-determined: ${pre_cert}
 Use this exact value for apiWalletInfo.cert field. Do NOT generate a new cert."
     fi
+
+    # mapping rule 裡的 webSiteValue 是本機檔案的殘值，餵給 LLM 之前先與
+    # WebSiteType.java 校正 —— 那才是真正定義站台編號的地方
+    sync_webSiteValue_from_website_type
 
     # Create directive prompt with embedded rules
     local transform_prompt="You are a data transformation tool. Your ONLY task is to transform Jira JSON to white label configuration JSON.

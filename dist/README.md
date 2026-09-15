@@ -47,6 +47,13 @@ Token 在 <https://id.atlassian.com/manage-profile/security/api-tokens> 申請�
 格式參照同目錄的 `service-account.sample.json`。
 
 金鑰由團隊提供；另外要請 BA 把該 service account 的信箱加進試算表的檢視權限。
+
+還要在 `ProjectTool/config/sheet-config.json` 填入試算表 ID（壓縮檔裡刻意留空）：
+
+```json
+"spreadsheetId": "<每張白牌 Jira 單「詳細網域配置參考」連結裡的那串 ID>"
+```
+
 沒設定的話，只有 `newGroup=true` 的單子會失敗，一般白牌不受影響。
 
 驗證憑證有沒有設好：
@@ -95,15 +102,22 @@ Windows：`ProjectTool\script\windows\white-label-process.ps1 SACRIC-1234`
 | 6 | git commit |
 | 7-8 | 回 Jira 留言、轉成 DEV DONE |
 
-## 5. 查下一個 webSiteValue
+## 5. 站台編號 (webSiteValue)
 
-新白牌要用的站台編號，從 citixchange 的測試查（不要用手抄的數字）：
+**流程會自己處理，你不用管。** step 2 每次都從 `WebSiteType.java` 推導出下一個可用的編號，
+再寫回 `task/white-label-mapping-rule.md` —— 所以剛解壓縮時那個檔案裡是幾號並不重要。
+
+想自己先查一下，或想確認有沒有重複，跑 citixchange 的測試：
 
 ```bash
 mvn -Dmaven.test.skip=false -Dtest=TestWebSiteTypeRegistry -DfailIfNoSpecifiedTests=false test
 ```
 
-輸出會列出目前最大值與下一個可用的編號，同時檢查有沒有重複的編號或站台名稱。
+輸出會列出目前最大值與下一個可用的編號，並在編號或站台名稱重複時失敗。
+同目錄還有 `TestApiActionCertRegistry` 檢查 cert 是否跨站台重複。
+
+> ⚠️ 這兩支測試不會在一般 build 跑到（`pom.xml` 設了 `maven.test.skip=true`），
+> 必須像上面那樣手動覆寫。
 
 ## 6. 出錯了怎麼辦
 

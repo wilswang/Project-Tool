@@ -767,6 +767,20 @@ cell 內容為 `-` 一律視為無資料，整格跳過。
 
 ## 📝 版本歷史
 
+### v1.5.5 (2026-09-15)
+- 🐛 **webSiteValue 改為每次從 `WebSiteType.java` 即時推導** - step 2 以前直接照抄
+  `task/white-label-mapping-rule.md` 裡寫死的數字。那個數字原本靠 citixchange 的版控
+  共享、由 step 3 回寫維護；ProjectTool 移出版控後它變成純本機檔，**剛解壓縮的人拿到的是
+  打包當下凍住的號碼，而 step 2 會無條件信任它** —— 第一張單就可能撞號，
+  而重複守衛是寫完 enum 才拓，還原很痛
+  - 新增 `get_next_webSiteValue()` / `Get-NextWebSiteValue`，沿用重複檢查既有的 grep 手法，
+    排除保留號段 AHC(999) / AHCHD(1000) / ACCOUNTING(99)，實測 0.03 秒
+  - `sync_webSiteValue_from_website_type()` 在 step 2 建 prompt 之前校正並回寫；
+    找不到 `WebSiteType.java` 就沿用檔案裡的值並警告，不中止
+  - 排除名單與 citixchange 的 `TestWebSiteTypeRegistry` 一致，兩邊改動要同步
+- 📝 **`dist/README.md`** - 補上 `sheet-config.json` 的 `spreadsheetId` 要自己填
+  （壓縮檔刻意留空），並改寫站台編號那一節：流程會自己處理，測試的角色是查詢與守門
+
 ### v1.5.4 (2026-09-15)
 - 📦 **本 repo 成為部署內容的唯一權威來源** - 在這之前只存在於部署端
   `citixchange_work/ProjectTool/` 的東西全部搬進來：白牌編排腳本

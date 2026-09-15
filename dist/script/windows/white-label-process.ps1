@@ -330,6 +330,68 @@ function Get-WebSiteTypeFile {
     return (Join-Path $script:ProjectRoot "src\main\java\com\nv\commons\code\WebSiteType.java")
 }
 
+# 站台編號的保留號段，推導下一個 webSiteValue 時要排除。
+# AHC(999) / AHCHD(1000) 不是白牌流程依序配發的編號，ACCOUNTING(99) 是後台站台。
+# 這份名單與 citixchange 的 TestWebSiteTypeRegistry 一致，改動時兩邊要一起改
+$script:ReservedWebSiteNames = @('AHC', 'AHCHD', 'ACCOUNTING')
+
+# 從 WebSiteType.java 推導下一個可用的 webSiteValue。
+#
+# 以前這個數字只存在 task/white-label-mapping-rule.md 裡，靠 step 3 回寫維護、
+# 靠 citixchange 的版控共享。ProjectTool 移出版控之後那份檔案變成本機檔，
+# 剛解壓縮的人拿到的是打包當下凍住的數字 —— 而 step 2 會無條件照抄它。
+#
+# 找不到 WebSiteType.java 時回傳 $null，由呼叫端決定要不要退回檔案裡的值
+function Get-NextWebSiteValue {
+    $websiteTypeFile = Get-WebSiteTypeFile
+    if (-not (Test-Path $websiteTypeFile)) {
+        return $null
+    }
+
+    $maxValue = $null
+    foreach ($line in Get-Content $websiteTypeFile) {
+        if ($line -match '^\s*([A-Z0-9_]+)\((\d+), "') {
+            $name = $Matches[1]
+            $value = [int]$Matches[2]
+            if ($script:ReservedWebSiteNames -contains $name) {
+                continue
+            }
+            if ($null -eq $maxValue -or $value -gt $maxValue) {
+                $maxValue = $value
+            }
+        }
+    }
+
+    if ($null -eq $maxValue) {
+        return $null
+    }
+    return $maxValue + 1
+}
+
+# 讓 mapping rule 裡的 webSiteValue 與 WebSiteType.java 一致後，才餵給 step 2
+function Sync-WebSiteValueFromWebSiteType {
+    $derived = Get-NextWebSiteValue
+
+    $current = $null
+    if ((Get-Content $script:ClaudeMd -Raw) -match '\*\*webSiteValue\*\*: Next available value (\d+)') {
+        $current = [int]$Matches[1]
+    }
+
+    if ($null -eq $derived) {
+        Write-Warning-Msg "找不到 WebSiteType.java，webSiteValue 沿用 mapping rule 的 $current"
+        Write-Warning-Msg "  若這份 ProjectTool 是剛解壓縮的，那個數字可能已經過期"
+        return
+    }
+
+    if ($derived -eq $current) {
+        Write-Verbose-Output "webSiteValue: $derived（與 WebSiteType.java 一致）"
+        return
+    }
+
+    Write-Warning-Msg "webSiteValue 已依 WebSiteType.java 校正: $current -> $derived"
+    Update-WebSiteValueInMappingRule -NewValue $derived
+}
+
 # 找出 WebSiteType 內重複的 webSiteValue
 # 取每個 enum 條目的第一個參數（site 編號），列出出現超過一次的值
 function Get-DuplicatedWebSiteValues {
@@ -496,6 +558,10 @@ Use this exact value for apiWalletInfo.cert field. Do NOT generate a new cert.
         }
 
         # Read mapping rules and Jira data
+        # mapping rule 裡的 webSiteValue 是本機檔案的殘值，餵給 LLM 之前先與
+        # WebSiteType.java 校正 —— 那才是真正定義站台編號的地方
+        Sync-WebSiteValueFromWebSiteType
+
         $mappingRules = Get-Content $script:ClaudeMd -Raw
         $jiraData = Get-Content $script:JiraFile -Raw
 
