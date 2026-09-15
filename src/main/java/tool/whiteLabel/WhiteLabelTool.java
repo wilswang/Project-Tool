@@ -171,6 +171,9 @@ public class WhiteLabelTool {
 				hasError = true;
 				System.err.println("❌ " + e.getMessage());
 			} catch (Exception e) {
+				// 一定要設 hasError：以前這裡只印訊息，step 3 照樣 exit 0，
+				// 於是 fillFile / insertAtMarker 丟出來的錯會被靜靜吃掉
+				hasError = true;
 				System.err.println("❌ Error processing '" + fc.getName() + "': " + e.getMessage());
 			}
 		}
@@ -209,6 +212,7 @@ public class WhiteLabelTool {
 
 				// 6. 先填值、驗證通過才寫檔，避免把 {$typo} 寫進 .sql
 				String content = TemplateEngine.fillFile(resolvedTemplate, replacements);
+				requireNonBlankContent(resolvedTemplate, outputPath, content);
 				PlaceholderValidator.requireFullyResolved(outputPath, content);
 
 				TemplateEngine.writeToFile(outputPath, content);
@@ -221,6 +225,7 @@ public class WhiteLabelTool {
 				hasError = true;
 				System.err.println("❌ " + e.getMessage());
 			} catch (Exception e) {
+				hasError = true;
 				System.err.println("❌ Error processing env " + envName + " for '" + fc.getName() + "': " + e.getMessage());
 			}
 		}
@@ -237,6 +242,18 @@ public class WhiteLabelTool {
 		}
 	}
 
+	/**
+	 * 白牌產出不存在「合法的空檔案」。模板讀得到但內容是空的（或只有空白）時，
+	 * {@code PlaceholderValidator} 會放行 —— 空字串沒有任何 {@code {$token}} —— 所以要另外擋。
+	 */
+	private static void requireNonBlankContent(String templatePath, String outputPath, String content)
+			throws IOException {
+		if (content == null || content.trim().isEmpty()) {
+			throw new IOException("模板 " + templatePath + " 填值後內容是空的，不寫出 " + outputPath
+				+ "。請確認模板檔是否為空、或路徑是否指錯");
+		}
+	}
+
 	private static void processNewFile(FileConfig fc, Map<String, String> replacements)
 			throws IOException, UnresolvedPlaceholderException {
 		String resolvedName = TemplateEngine.fill(fc.getName(), replacements);
@@ -247,6 +264,7 @@ public class WhiteLabelTool {
 		String outputPath = location + resolvedName;
 
 		String content = TemplateEngine.fillFile(fc.getTemplate(), replacements);
+		requireNonBlankContent(fc.getTemplate(), outputPath, content);
 		PlaceholderValidator.requireFullyResolved(outputPath, content);
 
 		TemplateEngine.writeToFile(outputPath, content);
@@ -254,8 +272,9 @@ public class WhiteLabelTool {
 	}
 
 	private static void processInsertFile(FileConfig fc, Map<String, String> replacements)
-			throws IOException, UnresolvedPlaceholderException {
+			throws IOException, UnresolvedPlaceholderException, MarkerNotFoundException {
 		String content = TemplateEngine.fillFile(fc.getTemplate(), replacements);
+		requireNonBlankContent(fc.getTemplate(), fc.getLocation(), content);
 		PlaceholderValidator.requireFullyResolved(fc.getLocation() + " <- " + fc.getTemplate(), content);
 
 		String marker = StringUtils.isNotBlank(fc.getMarker()) ? fc.getMarker() : "// insert New White Label";
@@ -337,8 +356,8 @@ public class WhiteLabelTool {
 		}
 
 		String fileName = javaFile.getFileName().toString();
-		System.out.println("✅ Import successfully inserted to " + fileName + ": " + normalizedImport);
 		Files.write(javaFile, result);
+		System.out.println("✅ Import successfully inserted to " + fileName + ": " + normalizedImport);
 	}
 
 	private static int findImportInsertPosition(List<String> lines, int firstImportIndex, int lastImportIndex, String newImport) {
@@ -379,16 +398,22 @@ public class WhiteLabelTool {
 	/**
 	 * 在檔案中找到包含 keyword 的行，並依該行的縮排，在前或後插入 insertContent。
 	 */
-	private static void insertAtMarker(Path javaFile, String keyword, String insertContent, boolean insertAfter) throws IOException {
+	static void insertAtMarker(Path javaFile, String keyword, String insertContent, boolean insertAfter)
+			throws IOException, MarkerNotFoundException {
 		List<String> result = new ArrayList<>();
+		int markerHits = 0;
 
 		List<String> insertLinesRaw = Arrays.asList(insertContent.split("\\R"));
 		try (BufferedReader reader = Files.newBufferedReader(javaFile)) {
 			String line;
 			while ((line = reader.readLine()) != null) {
 				String indent = getIndent(line);
+				boolean isMarker = line.contains(keyword);
+				if (isMarker) {
+					markerHits++;
+				}
 
-				if (!insertAfter && line.contains(keyword)) {
+				if (!insertAfter && isMarker) {
 					for (String insertLine : insertLinesRaw) {
 						result.add(indent + insertLine);
 					}
@@ -396,16 +421,28 @@ public class WhiteLabelTool {
 
 				result.add(line);
 
-				if (insertAfter && line.contains(keyword)) {
+				if (insertAfter && isMarker) {
 					for (String insertLine : insertLinesRaw) {
 						result.add(indent + insertLine);
 					}
 				}
 			}
 		}
+
+		// 找不到 marker 就中止，而且是在 Files.write 之前 —— 目標檔一個 byte 都不會動。
+		// 以前這裡照樣印 ✅ 並原樣寫回，少掉的那段程式碼不編譯錯，只是執行期少一個站台
+		if (markerHits == 0) {
+			throw new MarkerNotFoundException("在 " + javaFile + " 找不到插入點 marker: \"" + keyword
+				+ "\"。目標檔未被修改。請確認 marker 是否被重構掉，或設定檔的 marker 是否打錯字");
+		}
+		if (markerHits > 1) {
+			System.err.println("⚠️  marker \"" + keyword + "\" 在 " + javaFile + " 出現 " + markerHits
+				+ " 次，同一段內容會被插入 " + markerHits + " 次");
+		}
+
 		String fileName = javaFile.toString().substring(javaFile.toString().lastIndexOf('/') + 1);
-		System.out.println("✅ Content successfully written to " + fileName);
 		Files.write(javaFile, result);
+		System.out.println("✅ Content successfully written to " + fileName);
 	}
 
 	private static String getIndent(String line) {

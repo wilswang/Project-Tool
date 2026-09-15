@@ -766,6 +766,25 @@ cell 內容為 `-` 一律視為無資料，整格跳過。
 
 ## 📝 版本歷史
 
+### v1.5.2 (2026-09-15)
+- 🐛 **`TemplateEngine` 不再吞掉 IO 例外** - `fillFile` 讀不到模板時原本只印一行 stderr
+  並回傳**空字串**，呼叫端照樣寫檔並印 `✅ Created`，於是產生 0-byte 檔而整個流程全綠。
+  2026-09-09 實際發生：情境 6 指向不存在的 `RacingOnly/DB-41-template.txt`，三個 DB-41 都是空的。
+  `PlaceholderValidator` 攔不到 —— 空字串裡沒有任何 `{$token}`。現在 `fillFile` 與 `writeToFile`
+  都 `throws IOException`
+- 🐛 **`insertAtMarker` 找不到 marker 時中止** - 原本什麼都不插，卻無條件印
+  `✅ Content successfully written` 並把原內容照樣寫回：檔案看起來被處理過，實際少了一整段
+  註冊程式碼，而且不編譯錯（只是執行期少一個站台）。現在丟 `MarkerNotFoundException`，
+  而且是在 `Files.write` 之前 —— **目標檔一個 byte 都不會動**
+  - marker 出現多次會印警告（維持既有的「插入多次」行為）
+- 🐛 **`WhiteLabelTool` 的兩個通用 catch 補上 `hasError = true`** - 以前印了 ❌ 卻沒設旗標，
+  step 3 照樣 `exit 0`。少了這個，上面兩項修正丟出來的錯會被靜靜吃掉
+- ✨ **空內容守衛** - 模板讀得到但填值後是空的（或只有空白）就不寫出，這是通往 0-byte 檔的
+  第二條路徑。白牌產出不存在「合法的空檔案」
+- 🔧 **成功訊息移到實際寫入之後** - `insertAtMarker` 與 `insertImportStatement` 原本先印 ✅ 再
+  `Files.write`
+- ✅ **新增 16 個單元測試** - `TemplateEngineTest`(8)、`InsertAtMarkerTest`(8)，共 193 項
+
 ### v1.5.1 (2026-09-15)
 - ✨ **`SheetTool` 新增 `--patch <ticket.json>`** - 查到的 `groupInfo` 直接填回白牌單 JSON。
   逐欄獨立判斷、不覆寫已填的值（不同就警告）、沒有欄位要填就不改寫檔案；
