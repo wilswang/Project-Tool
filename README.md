@@ -766,6 +766,27 @@ cell 內容為 `-` 一律視為無資料，整格跳過。
 
 ## 📝 版本歷史
 
+### v1.5.1 (2026-09-15)
+- ✨ **`SheetTool` 新增 `--patch <ticket.json>`** - 查到的 `groupInfo` 直接填回白牌單 JSON。
+  逐欄獨立判斷、不覆寫已填的值（不同就警告）、沒有欄位要填就不改寫檔案；
+  沿用 `jq .` 的排版，不擾動既有格式。白牌流程的 step 2.5 用的就是這個
+  - 有 `--patch` 時，`apiInfoBkIpSetId` 不是 UUID 會從警告升級為錯誤並 exit 1、檔案不動
+- 🐛 **`JiraTool` 失敗時不再回 exit 0** - 以前每條失敗路徑都只是 `return`，JVM 照樣回 0，
+  呼叫端的 `if java -cp ... ; then` 把失敗當成功。最嚴重的是 `start-jira-issue` 因狀態不符
+  而中止時，腳本只檢查 `result/jira/<TICKET>-jira.txt` 存不存在，於是拿上一次留下的**舊檔**
+  當最新描述用（2026-09-10 實際誤導過：以為 BA 沒改單，其實檔案 mtime 停在前一天）
+  - 新增 `JiraToolException`，工具自己判定的失敗一律往上拋，退出碼由 `main` 統一負責
+  - unknown command、7 處參數不足、大 catch 全部改為 exit 1
+  - `post-comment` 的「留言已存在，跳過」維持 exit 0 —— 那是冪等跳過，不是失敗
+- 🔧 **`start-jira-issue` 接受 `IN DEV`** - 已經是 IN DEV 就跳過轉態、直接重新抓取，
+  所以 `-s 1` 重跑可行，也能拿它抓最新描述（以前只認 `Ready to DEV`，其餘一律中止）
+- 🔧 **移除 `commons-collections4`** - 全專案只有 `WhiteLabelConfig` 用到三次 `CollectionUtils.isEmpty`，
+  為此背 1.6MB 不划算，改為本地私有方法、行為原樣保留
+- 🔧 **排除 Apache HttpClient 相依鏈** - `google-http-client-apache-v2` / `httpclient` / `httpcore` /
+  `commons-codec` 在 `google-api-client` 與 `google-http-client` 兩邊都排除。
+  那些類別實際上永遠不會被載入（JVM 延遲解析），fat jar 由 14.9MB 減為約 12.7MB
+- ✅ **新增 26 個單元測試** - `GroupInfoPatcherTest`(18)、`JiraToolStatusGateTest`(8)，共 177 項
+
 ### v1.5.0 (2026-09-11)
 - ✨ **新增工具 D (Sheet Tool)** - 用 Google service account 讀取試算表，
   `group-info <代號>` 直接產出可貼進白牌單 JSON 的 `apiWalletInfo.groupInfo`

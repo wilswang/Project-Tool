@@ -7,7 +7,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +14,12 @@ import java.util.Map;
 /**
  * Jira Tool - CLI 範例工具
  * 展示如何使用 HttpClient 和 JiraClient
+ *
+ * <p><b>退出碼</b>：任何失敗都 {@code System.exit(1)}。以前每條失敗路徑都只是
+ * {@code return}，JVM 照樣回 0，呼叫端的 {@code if java -cp ... ; then} 於是把
+ * 失敗當成成功 —— 尤其 {@code start-jira-issue} 因狀態不符而中止時，腳本只檢查
+ * {@code result/jira/<TICKET>-jira.txt} 存不存在，結果拿上一次留下的舊檔當最新描述。
+ * 工具自己判定的失敗一律丟 {@link JiraToolException}，退出碼由 {@link #main(String[])} 統一負責。
  */
 public class JiraTool {
 
@@ -90,19 +95,24 @@ public class JiraTool {
 					break;
 
 				default:
-					System.err.println("Unknown command: " + command);
+					System.err.println("❌ Unknown command: " + command);
 					printUsage();
+					System.exit(1);
 			}
+		} catch (JiraToolException e) {
+			// 工具自己判定的失敗，訊息已經寫得夠清楚，不需要 stack trace
+			System.err.println("❌ " + e.getMessage());
+			System.exit(1);
 		} catch (Exception e) {
-			System.err.println("Error: " + e.getMessage());
+			System.err.println("❌ Error: " + e.getMessage());
 			e.printStackTrace();
+			System.exit(1);
 		}
 	}
 
 	private static void handleGetIssue(JiraClient jira, HttpClientConfig config, String[] args) throws Exception {
 		if (args.length < 2) {
-			System.err.println("Usage: JiraTool get-issue <issueKey>");
-			return;
+			throw new JiraToolException("Usage: JiraTool get-issue <issueKey>");
 		}
 
 		String issueKey = args[1];
@@ -119,8 +129,7 @@ public class JiraTool {
 
 	private static List<String> handleGetComments(JiraClient jira, String[] args) throws Exception {
 		if (args.length < 2) {
-			System.err.println("Usage: JiraTool get-comments <issueKey>");
-			return Collections.emptyList();
+			throw new JiraToolException("Usage: JiraTool get-comments <issueKey>");
 		}
 
 		String issueKey = args[1];
@@ -198,8 +207,7 @@ public class JiraTool {
 
 	private static List<String> handleGetTransitions(JiraClient jira, String[] args) throws Exception {
 		if (args.length < 2) {
-			System.err.println("Usage: JiraTool get-transitions <issueKey>");
-			return Collections.emptyList();
+			throw new JiraToolException("Usage: JiraTool get-transitions <issueKey>");
 		}
 
 		String issueKey = args[1];
@@ -219,8 +227,7 @@ public class JiraTool {
 
 	private static void handlePostComment(JiraClient jira, String[] args, boolean testMode) throws Exception {
 		if (args.length < 2) {
-			System.err.println("Usage: JiraTool post-comment <issueKey> [templatePath]");
-			return;
+			throw new JiraToolException("Usage: JiraTool post-comment <issueKey> [templatePath]");
 		}
 
 		String issueKey = args[1];
@@ -278,8 +285,7 @@ public class JiraTool {
 
 	private static void handleTransitionIssue(JiraClient jira, String[] args, boolean testMode) throws Exception {
 		if (args.length < 2) {
-			System.err.println("Usage: JiraTool transition-issue <issueKey> [templatePath]");
-			return;
+			throw new JiraToolException("Usage: JiraTool transition-issue <issueKey> [templatePath]");
 		}
 
 		String issueKey = args[1];
@@ -324,23 +330,51 @@ public class JiraTool {
 		}
 	}
 
+	/** 依單子目前狀態決定 {@link #startJiraIssue} 要怎麼走。 */
+	enum StatusGate {
+		/** Ready to DEV：先轉成 IN DEV 再抓取（第一次開單） */
+		TRANSITION_THEN_FETCH,
+		/** 已經是 IN DEV：不重複轉態，直接重新抓取（-s 1 重跑，或只是要最新描述） */
+		FETCH_ONLY,
+		/** 其他狀態：不該在這張單上開工 */
+		ABORT
+	}
+
+	/**
+	 * 狀態閘門的判斷。抽成獨立方法是為了能單獨單元測試 —— 其餘流程都要 JiraClient 與網路。
+	 *
+	 * @param currentStatus Jira 回傳的狀態名稱，可為 null
+	 */
+	static StatusGate decideStatusGate(String currentStatus) {
+		if (currentStatus == null || currentStatus.trim().isEmpty()) {
+			return StatusGate.ABORT;
+		}
+		String status = currentStatus.trim();
+		if (JiraTransitionId.REJECT.getResult().equalsIgnoreCase(status)) {
+			return StatusGate.TRANSITION_THEN_FETCH;
+		}
+		if (JiraTransitionId.TO_DEV.getResult().equalsIgnoreCase(status)) {
+			return StatusGate.FETCH_ONLY;
+		}
+		return StatusGate.ABORT;
+	}
+
 	/**
 	 * 啟動 Jira Issue 開發流程
-	 * 1. Check issue status (is Ready to DEV) - 跳過如果 testMode
-	 * 2. Update issue status (IN DEV) - 跳過如果 testMode
+	 * 1. Check issue status - 跳過如果 testMode
+	 * 2. Update issue status (IN DEV) - 狀態已經是 IN DEV 就跳過；testMode 一律跳過
 	 * 3. Get issue
 	 */
 	private static void startJiraIssue(JiraClient jira, String[] args, boolean testMode) throws Exception {
 		if (args.length < 2) {
-			System.err.println("Usage: JiraTool start-jira-issue <issueKey>");
-			return;
+			throw new JiraToolException("Usage: JiraTool start-jira-issue <issueKey>");
 		}
 
 		String issueKey = args[1];
 		System.out.println("\n=== Starting Jira Issue Development Workflow: " + issueKey + " ===\n");
 
 		if (!testMode) {
-			// Step 1: Check issue status (is Ready to DEV)
+			// Step 1: Check issue status
 			System.out.println("Step 1: Checking issue status...");
 			Map<String, String> queryParams = new HashMap<>();
 			queryParams.put("fields", "status");
@@ -349,17 +383,25 @@ public class JiraTool {
 			String currentStatus = issueStatus.get("fields").get("status").get("name").asText();
 			System.out.println("Current status: " + currentStatus);
 
-			if (!"Ready to DEV".equalsIgnoreCase(currentStatus)) {
-				System.out.println("⚠️  Warning: Issue status is not 'Ready to DEV', current status is: " + currentStatus);
-				System.out.println("Aborting execution");
-				return;
-			} else {
-				System.out.println("✅ Status confirmed: Ready to DEV\n");
+			StatusGate gate = decideStatusGate(currentStatus);
+			if (gate == StatusGate.ABORT) {
+				// 一定要丟例外而不是 return：以前這裡 return 讓 JVM 回 0，
+				// 呼叫端的 if java ... ; then 會判成成功，然後拿 result/jira 裡
+				// 上一次留下的舊檔當最新描述用
+				throw new JiraToolException("Issue status is '" + currentStatus + "', expected '"
+					+ JiraTransitionId.REJECT.getResult() + "' or '" + JiraTransitionId.TO_DEV.getResult()
+					+ "'. Aborting execution — nothing was fetched.");
 			}
 
 			// Step 2: Update issue status (IN DEV)
-			System.out.println("Step 2: Updating issue status to IN DEV...");
-			handleTransitionIssue(jira, new String[]{"transition-issue", issueKey, "TO_DEV"}, false);
+			if (gate == StatusGate.TRANSITION_THEN_FETCH) {
+				System.out.println("✅ Status confirmed: " + JiraTransitionId.REJECT.getResult() + "\n");
+				System.out.println("Step 2: Updating issue status to IN DEV...");
+				handleTransitionIssue(jira, new String[]{"transition-issue", issueKey, "TO_DEV"}, false);
+			} else {
+				System.out.println("ℹ️  Already " + JiraTransitionId.TO_DEV.getResult()
+					+ ", skipping Step 2 and re-fetching the latest issue data\n");
+			}
 		} else {
 			System.out.println("⚠️  Test mode: Skipping Step 1 (status check) and Step 2 (status update)\n");
 		}
@@ -391,8 +433,7 @@ public class JiraTool {
 
 	private static void handleEnhancedSearch(JiraClient jira, String[] args) throws Exception {
 		if (args.length < 2) {
-			System.err.println("Usage: JiraTool enhanced-search <issueList> [templatePath]");
-			return;
+			throw new JiraToolException("Usage: JiraTool enhanced-search <issueList> [templatePath]");
 		}
 
 		String issueList = args[1];
