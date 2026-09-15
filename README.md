@@ -574,6 +574,9 @@ result/
 # 或直接呼叫（腳本用這種）
 java -cp Project-Tool.jar tool.sheet.SheetTool group-info A69
 
+# 查完直接填回白牌單 JSON（白牌流程 step 2.5 的做法）
+java -cp Project-Tool.jar tool.sheet.SheetTool group-info A69 --patch sample/New\ Group/SACRIC-1410.json
+
 # 顯示說明
 java -cp Project-Tool.jar tool.sheet.SheetTool --help
 ```
@@ -587,12 +590,29 @@ java -cp Project-Tool.jar tool.sheet.SheetTool --help
 | `read-tab` | 讀整個分頁，可用 `--max-rows` 限制 |
 | `read-columns` | 讀指定欄位，欄位用字母指定 |
 | `group-info <code>` | 查詢群組的 `groupInfo`，**stdout 只有純 JSON**（狀態走 stderr，可直接 pipe） |
+| `group-info <code> --patch <ticket.json>` | 同上，再把結果**填回**白牌單 JSON 的 `apiWalletInfo.groupInfo`。白牌流程 step 2.5 用的就是這個 |
 
 共通選項：`--config` / `--credential` / `--target` / `--spreadsheetId` / `--tab` /
 `--columns` / `--rows <start:end>` / `--max-rows` / `--format table|tsv|json` /
 `-t`（印出解析後的 range 與每格 backup 的來源）/ `-h`。
 
 欄位一律用**字母**指定，範圍用 `-` 或 `:`：`H`、`J-K`、`U:V`、`B,H,J-K,M,S,U-Y`。
+
+#### `--patch` 的合併規則
+
+逐欄獨立判斷，**不會覆寫已填的值**：
+
+| 單子現值 | 動作 |
+|---|---|
+| 未填（`null`、空字串、空陣列，或 `"privateIpSetId"` / `"backup1"` 這類字面假值） | 填入試算表的值 |
+| 已填且與試算表相同 | 不動（`-s 3` 重跑會走到這裡） |
+| 已填且與試算表不同 | **不動**，把兩邊的值印到 stderr 警告 |
+
+沒有任何欄位需要填時**不改寫檔案**，避免只有格式差異的 diff；要改寫時走
+temp file + rename，並沿用 `jq .` 的排版（2 空格縮排），所以不會擾動 step 2 的產出格式。
+
+⚠️ 有 `--patch` 時，`apiInfoBkIpSetId` 不是 UUID（例如試算表寫 `Cloudfront`）會從**警告升級為錯誤**
+（exit 1，檔案不動）—— 那個值會直接進正式 SQL，寧可中止也不要靜靜寫錯。沒有 `--patch` 時維持警告。
 
 ### ⚙️ 配置檔案
 

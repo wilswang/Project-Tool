@@ -244,11 +244,51 @@ public final class SheetTool {
 		List<String> backup = mapped.getGroupInfo().getBackup();
 		System.err.println("ℹ️  backup " + backup.size() + " 個 —— 來源 "
 			+ (mapped.getBackupSources().isEmpty() ? "(無)" : joinWithSpace(mapped.getBackupSources())));
-		for (String warning : mapped.getWarnings()) {
-			System.err.println("⚠️  " + warning);
+
+		if (options.patchPath == null) {
+			for (String warning : mapped.getWarnings()) {
+				System.err.println("⚠️  " + warning);
+			}
+			System.err.println("ℹ️  貼進 ProjectTool/sample/**/SACRIC-XXXX.json 的 apiWalletInfo.groupInfo，"
+				+ "並確認 apiWalletInfo.newGroup = true");
+			return;
 		}
-		System.err.println("ℹ️  貼進 ProjectTool/sample/**/SACRIC-XXXX.json 的 apiWalletInfo.groupInfo，"
-			+ "並確認 apiWalletInfo.newGroup = true");
+
+		// --patch：值有疑慮就不要寫進單子。只印出來讓人自己判斷還好，
+		// 但自動填進去會一路變成正式 SQL，那是這整個功能要消滅的失敗模式
+		if (!mapped.getWarnings().isEmpty()) {
+			StringBuilder sb = new StringBuilder("試算表的值有疑慮，不自動填入單子:");
+			for (String warning : mapped.getWarnings()) {
+				sb.append("\n   ").append(warning);
+			}
+			sb.append("\n   請與 Infra 確認正確的值後手動填入 ")
+				.append(new File(options.patchPath).getAbsolutePath());
+			throw new SheetToolException(sb.toString());
+		}
+		applyPatch(options, mapped.getGroupInfo());
+	}
+
+	private static void applyPatch(Options options, tool.whiteLabel.GroupInfo fromSheet)
+			throws SheetToolException {
+		File target = new File(options.patchPath);
+		GroupInfoPatcher.PatchResult result = GroupInfoPatcher.patchFile(target, fromSheet);
+
+		if (!result.getFilled().isEmpty()) {
+			System.err.println("✅ 已填入 " + target.getAbsolutePath());
+			System.err.println("   填入欄位: " + join(result.getFilled(), ", "));
+		}
+		if (!result.getUnchanged().isEmpty()) {
+			System.err.println("ℹ️  已是正確值、未變動: " + join(result.getUnchanged(), ", "));
+		}
+		for (GroupInfoPatcher.Conflict conflict : result.getConflicts()) {
+			// 不覆寫。正常流程不該走到這裡 —— step 2 產出的形狀是固定的
+			System.err.println("⚠️  " + conflict.getField() + " 單子已有值且與試算表不同，未覆寫:");
+			System.err.println("       單子  : " + conflict.getTicketValue());
+			System.err.println("       試算表: " + conflict.getSheetValue());
+		}
+		if (!result.getConflicts().isEmpty()) {
+			System.err.println("⚠️  單子的值優先保留。若這是新群組，不該有既有值 —— 請人工確認");
+		}
 	}
 
 	private static String joinWithSpace(List<String> values) {
@@ -446,6 +486,8 @@ public final class SheetTool {
 		private String spreadsheetId;
 		private String tab;
 		private String columns;
+		/** group-info --patch <path>：把查到的 groupInfo 填進該白牌單 JSON */
+		private String patchPath;
 		private Integer startRow;
 		private Integer endRow;
 		private Integer maxRows;
@@ -469,6 +511,7 @@ public final class SheetTool {
 						case "--spreadsheetId":  options.spreadsheetId = value; break;
 						case "--tab":            options.tab = value; break;
 						case "--columns":        options.columns = value; break;
+						case "--patch":          options.patchPath = value; break;
 						case "--format":         options.format = value; break;
 						case "--max-rows":       options.maxRows = parseInt(arg, value); break;
 						case "--rows":           options.applyRows(value); break;
@@ -548,9 +591,10 @@ public final class SheetTool {
 		System.out.println();
 		System.out.println("  group-info <groupCode>");
 		System.out.println("      Return the groupInfo JSON needed to add that API 2.0 group.");
-		System.out.println("      Paste it into apiWalletInfo.groupInfo of the white-label ticket JSON.");
+		System.out.println("      Paste it into apiWalletInfo.groupInfo of the white-label ticket JSON,");
+		System.out.println("      or let --patch write it there for you.");
 		System.out.println("      Example: SheetTool group-info A69");
-		System.out.println("      Example: SheetTool group-info A69 -t");
+		System.out.println("      Example: SheetTool group-info A69 --patch sample/SingleWallet/SACRIC-1402.json");
 		System.out.println();
 		System.out.println("Options:");
 		System.out.println("  --config <path>         Config file path (default: ./config/sheet-config.json,");
@@ -560,6 +604,10 @@ public final class SheetTool {
 		System.out.println("  --spreadsheetId <id>    Override the target's spreadsheetId");
 		System.out.println("  --tab <title>           Override the target's tab");
 		System.out.println("  --columns <spec>        Column letters, e.g. H or J-K or B,H,J-K,S");
+		System.out.println("  --patch <ticket.json>   group-info only: write the groupInfo into that white-label");
+		System.out.println("                          ticket JSON. Fields already holding a real value are left");
+		System.out.println("                          alone and reported. Aborts instead of writing when the");
+		System.out.println("                          spreadsheet value looks wrong (e.g. a non-UUID IP Set ID)");
 		System.out.println("  --rows <start:end>      1-based inclusive, e.g. 4:200 or 4:");
 		System.out.println("  --max-rows <n>          read-tab only: stop after N rows");
 		System.out.println("  --format <fmt>          table (default) | tsv | json");
