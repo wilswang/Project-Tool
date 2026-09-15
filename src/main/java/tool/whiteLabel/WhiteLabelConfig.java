@@ -13,13 +13,13 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,6 +107,16 @@ public class WhiteLabelConfig {
 		return this.additionalProperties.get(name);
 	}
 
+	/**
+	 * 取代 commons-collections4 的 CollectionUtils.isEmpty。
+	 *
+	 * 全專案只有這個檔案用得到，為了三次呼叫背 1.6MB 的相依不划算，
+	 * 所以把相依移除、行為原樣保留（null 或空集合都算 empty）。
+	 */
+	private static boolean isEmpty(Collection<?> collection) {
+		return collection == null || collection.isEmpty();
+	}
+
 	public void validate() {
 		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
 		Validator validator = factory.getValidator();
@@ -130,7 +140,7 @@ public class WhiteLabelConfig {
 						System.err.println("❌ 驗證錯誤: 當 newGroup 為 true 時，groupInfo 不可為 null");
 						System.exit(1);
 					}
-					if (CollectionUtils.isEmpty(apiWalletInfo.getGroupInfo().getBkIpSetId())) {
+					if (isEmpty(apiWalletInfo.getGroupInfo().getBkIpSetId())) {
 						System.err.println("❌ 驗證錯誤: 當 newGroup 為 true 時，bkIpSetId 不可為 null");
 						System.exit(1);
 					}
@@ -140,7 +150,7 @@ public class WhiteLabelConfig {
 							System.exit(1);
 						}
 					}
-					if (CollectionUtils.isEmpty(apiWalletInfo.getGroupInfo().getBackup())) {
+					if (isEmpty(apiWalletInfo.getGroupInfo().getBackup())) {
 						System.err.println("❌ 驗證錯誤: 當 newGroup 為 true 時，backup 不可為 null");
 						System.exit(1);
 					}
@@ -150,7 +160,7 @@ public class WhiteLabelConfig {
 							System.exit(1);
 						}
 					}
-					if (CollectionUtils.isEmpty(apiWalletInfo.getGroupInfo().getPrivateIp())) {
+					if (isEmpty(apiWalletInfo.getGroupInfo().getPrivateIp())) {
 						System.err.println("❌ 當 newGroup 為 true 時，privateIp 不可為 null");
 						System.exit(1);
 					}
