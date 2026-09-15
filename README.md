@@ -766,6 +766,20 @@ cell 內容為 `-` 一律視為無資料，整格跳過。
 
 ## 📝 版本歷史
 
+### v1.5.3 (2026-09-15)
+- 🐛 **`bkIpSetId` 長度守衛** - `NewGroupSqlBuilder` 原本寫成
+  `!isEmpty() ? get(0) : null` / `!isEmpty() ? get(1) : null`，兩個問題：
+  只有一個元素時 `get(1)` 直接 IndexOutOfBounds；一個都沒有時兩者都是 `null`，
+  而 `TemplateEngine.fill` 把 null 當空字串，於是 SQL 寫進 `''` 且
+  `PlaceholderValidator` 放行（沒有 `{$token}` 殘留）—— 又一條靜默錯誤
+  - 「只有一個」是真實資料到得了的狀態：`GroupInfoMapper` 逐列取試算表的 M 欄，
+    空白或 `-` 會被跳過，所以群組第二列 M 欄沒填就只會回一個
+  - `WhiteLabelConfig.validate()` 的檢查從「非空」升級為「至少 2 個」，
+    在產生任何檔案之前就擋下，訊息說明第 1 個是 GA、第 2 個是 CF
+  - `NewGroupSqlBuilder` 另有防守檢查（繞過 validate 的呼叫端），不足丟 `IllegalStateException`
+  - 超過兩個 → 用前兩個並印警告，不中止
+- ✅ **新增 5 個單元測試** - `NewGroupSqlBuilderTest` 的 bkIpSetId 長度案例，共 198 項
+
 ### v1.5.2 (2026-09-15)
 - 🐛 **`TemplateEngine` 不再吞掉 IO 例外** - `fillFile` 讀不到模板時原本只印一行 stderr
   並回傳**空字串**，呼叫端照樣寫檔並印 `✅ Created`，於是產生 0-byte 檔而整個流程全綠。

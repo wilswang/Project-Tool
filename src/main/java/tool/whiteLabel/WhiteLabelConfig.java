@@ -144,6 +144,15 @@ public class WhiteLabelConfig {
 						System.err.println("❌ 驗證錯誤: 當 newGroup 為 true 時，bkIpSetId 不可為 null");
 						System.exit(1);
 					}
+					// 必須剛好兩個：第 1 個給 {$wwwgaIpSetId}、第 2 個給 {$wwwcfIpSetId}。
+					// 只檢查非空是不夠的 —— GroupInfoMapper 逐列取試算表的 M 欄且會跳過空白，
+					// 群組第二列沒填就只會回一個，以前會在 NewGroupSqlBuilder 直接 IndexOutOfBounds
+					if (apiWalletInfo.getGroupInfo().getBkIpSetId().size() < 2) {
+						System.err.println("❌ 驗證錯誤: 當 newGroup 為 true 時，bkIpSetId 需要 2 個"
+							+ "（第 1 個是 GA、第 2 個是 CF 的 IP Set ID），目前只有 "
+							+ apiWalletInfo.getGroupInfo().getBkIpSetId().size() + " 個");
+						System.exit(1);
+					}
 					for (String item : apiWalletInfo.getGroupInfo().getBkIpSetId()) {
 						if (StringUtils.isBlank(item)) {
 							System.err.println("❌ 當 newGroup 為 true 時，bkIpSetId 中不可有 null 元素");

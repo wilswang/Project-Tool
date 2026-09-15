@@ -187,4 +187,72 @@ public class NewGroupSqlBuilderTest {
 		}
 		return count;
 	}
+
+	// ---------- bkIpSetId 的長度守衛 ----------
+
+	private WhiteLabelConfig configWithBkIpSetId(List<String> bkIpSetId) {
+		WhiteLabelConfig config = buildConfig();
+		config.getApiWalletInfo().getGroupInfo().setBkIpSetId(bkIpSetId);
+		return config;
+	}
+
+	/** 兩個 → 第 1 個是 GA、第 2 個是 CF */
+	@Test
+	public void testTwoBkIpSetIdsMapToGaAndCf() {
+		Map<String, String> result =
+			NewGroupSqlBuilder.build(buildConfig(), plainEnv("DEV", "devnginx", "dev9wapi"));
+		assertEquals("7d29acef-9a40-45da-b0ff-c0552d4fb8b6", result.get("{$wwwgaIpSetId}"));
+		assertEquals("8c7572ef-5ac9-4e17-9b05-a8f9b008a5a6", result.get("{$wwwcfIpSetId}"));
+	}
+
+	/**
+	 * 只有一個 → 丟例外。以前是 get(1) 直接 IndexOutOfBoundsException，
+	 * 而這是真實資料到得了的狀態：GroupInfoMapper 逐列取 M 欄且跳過空白。
+	 */
+	@Test
+	public void testSingleBkIpSetIdIsRejected() {
+		try {
+			NewGroupSqlBuilder.build(
+				configWithBkIpSetId(Collections.singletonList("7d29acef-9a40-45da-b0ff-c0552d4fb8b6")),
+				plainEnv("DEV", "devnginx", "dev9wapi"));
+			fail("只有一個 bkIpSetId 卻沒有丟例外");
+		} catch (IllegalStateException expected) {
+			assertTrue("訊息要說明需要 2 個", expected.getMessage().contains("2 個"));
+			assertTrue("訊息要帶上群組代號", expected.getMessage().contains("A58"));
+		}
+	}
+
+	/** 空清單 → 丟例外，而不是讓 null 變成空字串寫進 SQL */
+	@Test
+	public void testEmptyBkIpSetIdIsRejected() {
+		try {
+			NewGroupSqlBuilder.build(configWithBkIpSetId(Collections.<String>emptyList()),
+				plainEnv("DEV", "devnginx", "dev9wapi"));
+			fail("空的 bkIpSetId 卻沒有丟例外");
+		} catch (IllegalStateException expected) {
+			assertTrue(expected.getMessage().contains("0 個"));
+		}
+	}
+
+	/** null → 丟例外，不 NPE */
+	@Test
+	public void testNullBkIpSetIdIsRejected() {
+		try {
+			NewGroupSqlBuilder.build(configWithBkIpSetId(null),
+				plainEnv("DEV", "devnginx", "dev9wapi"));
+			fail("null bkIpSetId 卻沒有丟例外");
+		} catch (IllegalStateException expected) {
+			assertTrue(expected.getMessage().contains("0 個"));
+		}
+	}
+
+	/** 超過兩個 → 用前兩個，不中止（依 2026-09-15 的決定：警告但照做） */
+	@Test
+	public void testMoreThanTwoBkIpSetIdsUsesFirstTwo() {
+		Map<String, String> result = NewGroupSqlBuilder.build(
+			configWithBkIpSetId(Arrays.asList("ga-id", "cf-id", "extra-id")),
+			plainEnv("DEV", "devnginx", "dev9wapi"));
+		assertEquals("ga-id", result.get("{$wwwgaIpSetId}"));
+		assertEquals("cf-id", result.get("{$wwwcfIpSetId}"));
+	}
 }

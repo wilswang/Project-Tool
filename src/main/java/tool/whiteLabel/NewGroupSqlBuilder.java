@@ -29,6 +29,32 @@ public final class NewGroupSqlBuilder {
 		throw new UnsupportedOperationException("Utility class cannot be instantiated");
 	}
 
+	/**
+	 * bkIpSetId 必須有兩個：第 1 個是 GA、第 2 個是 CF 的 IP Set ID，分別填進
+	 * {@code {$wwwgaIpSetId}} 與 {@code {$wwwcfIpSetId}}。
+	 *
+	 * <p>原本寫成 {@code !isEmpty() ? get(0) : null} / {@code !isEmpty() ? get(1) : null}，
+	 * 兩個問題：只有一個元素時 {@code get(1)} 直接 IndexOutOfBounds；一個都沒有時兩者都是
+	 * {@code null}，而 {@code TemplateEngine.fill} 把 null 當空字串，於是 SQL 寫進 {@code ''}
+	 * 而 {@code PlaceholderValidator} 放行（沒有 {@code {$token}} 殘留）—— 又一條靜默錯誤。
+	 *
+	 * <p>「只有一個」是真實資料到得了的狀態：{@code GroupInfoMapper} 逐列取試算表的 M 欄，
+	 * 空白或 {@code -} 會被跳過，所以群組的第二列 M 欄沒填就只會回一個。
+	 */
+	private static List<String> requireTwoBkIpSetIds(List<String> bkIpSetId, String group) {
+		int size = bkIpSetId == null ? 0 : bkIpSetId.size();
+		if (size < 2) {
+			throw new IllegalStateException("群組 " + group + " 的 bkIpSetId 只有 " + size
+				+ " 個，需要 2 個（第 1 個是 GA、第 2 個是 CF 的 IP Set ID）。"
+				+ "請確認試算表該群組兩列的 bkIpSetId 欄位都有值");
+		}
+		if (size > 2) {
+			System.err.println("⚠️  群組 " + group + " 的 bkIpSetId 有 " + size
+				+ " 個，只會用前兩個（GA、CF），其餘忽略");
+		}
+		return bkIpSetId;
+	}
+
 	public static Map<String, String> build(WhiteLabelConfig whiteLabelConfig, EnvValues envValues) {
 		ApiWalletInfo apiWalletInfo = whiteLabelConfig.getApiWalletInfo();
 		GroupInfo groupInfo = apiWalletInfo.getGroupInfo();
@@ -39,9 +65,11 @@ public final class NewGroupSqlBuilder {
 
 		Map<String, String> replacements = new LinkedHashMap<>();
 
+		List<String> bkIpSetId = requireTwoBkIpSetIds(groupInfo.getBkIpSetId(), apiWalletInfo.getGroup());
+
 		replacements.put("{$privateIpSetId}", groupInfo.getPrivateIpSetId());
-		replacements.put("{$wwwgaIpSetId}", !groupInfo.getBkIpSetId().isEmpty() ? groupInfo.getBkIpSetId().get(0) : null);
-		replacements.put("{$wwwcfIpSetId}", !groupInfo.getBkIpSetId().isEmpty() ? groupInfo.getBkIpSetId().get(1) : null);
+		replacements.put("{$wwwgaIpSetId}", bkIpSetId.get(0));
+		replacements.put("{$wwwcfIpSetId}", bkIpSetId.get(1));
 		replacements.put("{$apiInfoBkIpSetId}", groupInfo.getApiInfoBkIpSetId());
 
 		String subDomainStatic = envValues.getSubDomainStatic();
