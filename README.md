@@ -767,6 +767,10 @@ cell 內容為 `-` 一律視為無資料，整格跳過。
 
 ## 📝 版本歷史
 
+### v1.5.6 (2026-10-27)
+- 🔧 **RacingOnly `DB-01-template.txt` 的 `offerGameProduct` 改為 `[1,6]`** - 原本 `[1,2,6,12]`；
+  這個值之前只改在部署端，重新解壓縮就會被蓋回去，現在收回本 repo
+
 ### v1.5.5 (2026-09-15)
 - 🐛 **webSiteValue 改為每次從 `WebSiteType.java` 即時推導** - step 2 以前直接照抄
   `task/white-label-mapping-rule.md` 裡寫死的數字。那個數字原本靠 citixchange 的版控
