@@ -16,7 +16,7 @@ VALUES ({$webSiteValue}, 0, 'root', sysdate(6), 'root', sysdate(6), '{
 	"offerBetfairExchange": 1,
 	"enableDabbaModeOddsSetting": 0
 }', '{
-	"offerGameProduct": "[1,6]"
+	"offerGameProduct": "[1]"
 }', 1, 0, '{
 	"mobileImgUrl": "",
 	"desktopImgUrl": "",

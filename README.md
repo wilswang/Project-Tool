@@ -767,6 +767,13 @@ cell 內容為 `-` 一律視為無資料，整格跳過。
 
 ## 📝 版本歷史
 
+### v1.5.7 (2026-10-27)
+- 🔧 **SingleWallet 的 `offerGameProduct` 對齊實際上線值** - 模板產出的值一直要在 citixchange 端手動修，
+  修完沒回寫模板，下一張單又會產出舊值
+  - RacingOnly `DB-01-template.txt`：`[1,6]` → `[1]`（賽馬賽狗白牌只提供 Horse Racing、Greyhound Racing）
+  - SingleWallet `DB-01-template.txt`、`DB-01-template-New-Group.txt`：`[1,2,3,6,12,14]` → `[1,2,6,14]`
+  - ApiWallet（Transfer Wallet）模板維持 `[1,2,3,6,12,14]`，未確認是否也要調整
+
 ### v1.5.6 (2026-10-27)
 - 🔧 **RacingOnly `DB-01-template.txt` 的 `offerGameProduct` 改為 `[1,6]`** - 原本 `[1,2,6,12]`；
   這個值之前只改在部署端，重新解壓縮就會被蓋回去，現在收回本 repo
