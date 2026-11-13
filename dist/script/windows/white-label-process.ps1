@@ -23,10 +23,14 @@
 .PARAMETER FromStep
     Start from specific step (1-8)
 
+.PARAMETER ToStep
+    Stop after this step (1-8). e.g. -FromStep 3 -ToStep 4 = generate + compile only
+
 .EXAMPLE
     .\white-label-process.ps1 -TicketNo SACRIC-1062
     .\white-label-process.ps1 SACRIC-1062 -Customized -TestMode
     .\white-label-process.ps1 SACRIC-1062 -FromStep 3
+    .\white-label-process.ps1 SACRIC-1062 -ToStep 4
 #>
 
 param(
@@ -44,8 +48,16 @@ param(
 
     [Alias('s')]
     [ValidateRange(1,8)]
-    [int]$FromStep = 1
+    [int]$FromStep = 1,
+
+    [ValidateRange(1,8)]
+    [int]$ToStep = 8
 )
+
+if ($ToStep -lt $FromStep) {
+    Write-Host "Error: -ToStep must be between $FromStep and 8" -ForegroundColor Red
+    exit 1
+}
 
 # =============================================================================
 # Initialization
@@ -1036,17 +1048,53 @@ function Invoke-Step6 {
         Write-Verbose-Output "Commit message: $commitMsg"
 
         # Stage files
-        # 只 stage src/：ProjectTool 已不在 citixchange 的版控內（由 zip 提供）
-        $filesToAdd = @(
-            "src/"
-        )
+        # 只 commit 本單的產出：step 3 寫的 manifest（src/ 底下的部分）＋ step 5 追加的 release SQL。
+        # 以前是 git add src/，會把開發者本機未追蹤的檔案（例如還沒要進版控的測試）一起 commit
+        $manifest = Join-Path $script:ToolDir "result/manifest/$TicketNo.files"
+        if (-not (Test-Path $manifest)) {
+            Log-Step 6 "Failed (missing manifest)"
+            Write-Error-Msg "Step 6 Failed: manifest from step 3 not found: $manifest"
+            Write-Error-Msg "  Re-run with -FromStep 3 to regenerate it, or commit manually"
+            return $false
+        }
 
+        $filesToAdd = @()
+        foreach ($line in Get-Content $manifest) {
+            # manifest 的路徑相對 ProjectTool；citixchange 的檔案是 ../src/...，result/ 底下的不進版控
+            if ($line.StartsWith("../src/")) {
+                $filesToAdd += $line.Substring(3)
+            }
+        }
+        $fixVersion = Read-JsonField -Field "fixVersion"
+        foreach ($sqlFile in @("src/release_sql/$fixVersion/MyDB01.sql", "src/release_sql/$fixVersion/MyDB41.sql")) {
+            if (Test-Path $sqlFile) {
+                $filesToAdd += $sqlFile
+            }
+        }
+
+        if ($filesToAdd.Count -eq 0) {
+            Log-Step 6 "Failed (nothing to commit)"
+            Write-Error-Msg "Step 6 Failed: manifest has no files under src/"
+            return $false
+        }
+
+        Write-Verbose-Output "Files to commit:"
+        foreach ($f in $filesToAdd) {
+            Write-Verbose-Output "  - $f"
+        }
+
+        & git add -- @filesToAdd
+        if ($LASTEXITCODE -ne 0) {
+            Log-Step 6 "Failed (git add)"
+            Write-Error-Msg "Step 6 Failed: git add failed"
+            return $false
+        }
+
+        # 帶 pathspec，只提交這些檔案，不會帶到開發者先前另外 stage 的東西
         if ($Quiet) {
-            & git add @filesToAdd 2>&1 | Out-Null
-            & git commit -m $commitMsg 2>&1 | Out-Null
+            & git commit -m $commitMsg -- @filesToAdd 2>&1 | Out-Null
         } else {
-            & git add @filesToAdd
-            & git commit -m $commitMsg
+            & git commit -m $commitMsg -- @filesToAdd
         }
 
         if ($LASTEXITCODE -eq 0) {
@@ -1332,6 +1380,11 @@ function Show-CompletionSummary {
 # Main Execution Flow
 # =============================================================================
 
+# step N 是否落在 -FromStep 與 -ToStep 之間
+function Test-ShouldRunStep([int]$Step) {
+    return ($FromStep -le $Step -and $ToStep -ge $Step)
+}
+
 function Main {
     $overallStatus = 0
 
@@ -1347,6 +1400,7 @@ function Main {
     Write-Verbose-Output "  - CUSTOMIZED_MODE: $Customized"
     Write-Verbose-Output "  - QUIET_MODE: $Quiet"
     Write-Verbose-Output "  - FROM_STEP: $FromStep"
+    Write-Verbose-Output "  - TO_STEP: $ToStep"
     Write-Verbose-Output ""
     Write-Verbose-Output "Directories:"
     Write-Verbose-Output "  - SCRIPT_DIR: $($script:ScriptDir)"
@@ -1375,42 +1429,46 @@ function Main {
     if ($FromStep -gt 1) {
         Write-Warning-Msg "Starting from step $FromStep (skipping steps 1-$($FromStep - 1))"
     }
+    if ($ToStep -lt 8) {
+        Write-Warning-Msg "Stopping after step $ToStep (skipping steps $($ToStep + 1)-8)"
+    }
 
     # CRITICAL STEPS (fail fast)
-    if ($FromStep -le 1) {
+    if (Test-ShouldRunStep 1) {
         if (-not (Invoke-Step1)) { exit 1 }
     }
-    if ($FromStep -le 2) {
+    if (Test-ShouldRunStep 2) {
         if (-not (Invoke-Step2)) { exit 1 }
     }
-    # 用 -le 3 而非 -le 2：-FromStep 3 重跑也要重新確認 groupInfo 已填
-    if ($FromStep -le 3) {
+    # 2.5 是 step 2 產出 JSON 的補完，也是 step 3 的前置：
+    # -FromStep 3 重跑要重新確認 groupInfo（已有值的欄位不會被覆寫），-ToStep 2 也要拿到完整 JSON
+    if ($FromStep -le 3 -and $ToStep -ge 2) {
         if (-not (Invoke-Step2_5)) { exit 1 }
     }
-    if ($FromStep -le 3) {
+    if (Test-ShouldRunStep 3) {
         if (-not (Invoke-Step3)) { exit 1 }
     }
 
     # PARTIAL FAILURE OK
-    if ($FromStep -le 4) {
+    if (Test-ShouldRunStep 4) {
         if (-not (Invoke-Step4)) {
             Write-Warning-Msg "Step 4 failed (continuing)"
         }
     }
 
     # OPTIONAL (exit on critical failure, skip if customized)
-    if ($FromStep -le 5) {
+    if (Test-ShouldRunStep 5) {
         if (-not (Invoke-Step5)) { exit 1 }
     }
-    if ($FromStep -le 6) {
+    if (Test-ShouldRunStep 6) {
         if (-not (Invoke-Step6)) { exit 1 }
     }
 
     # JIRA UPDATES (non-fatal, skip if customized)
-    if ($FromStep -le 7) {
+    if (Test-ShouldRunStep 7) {
         if (-not (Invoke-Step7)) { $overallStatus = 1 }
     }
-    if ($FromStep -le 8) {
+    if (Test-ShouldRunStep 8) {
         if (-not (Invoke-Step8)) { $overallStatus = 1 }
     }
 

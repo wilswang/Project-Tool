@@ -85,6 +85,7 @@ Windows：`ProjectTool\script\windows\white-label-process.ps1 SACRIC-1234`
 | `-t` | 測試模式：跳過 step 5-8，不碰 DEV DB、不 commit、不動 Jira |
 | `-c` | 客製模式：跳過 step 5-8（與 `-t` 的差別是仍以正式模式呼叫底層工具） |
 | `-s N` | 從第 N 步開始重跑 |
+| `--to-step N` | 跑完第 N 步就停。例如 `--to-step 4` 只到產出加編譯，不跑 DEV SQL、不 commit、不動 Jira，方便先檢查或手動調整產出 |
 | `--quiet` | 少印一點 |
 
 **第一次用建議先加 `-t -c` 試跑**，確認環境沒問題再跑正式的。
@@ -99,7 +100,7 @@ Windows：`ProjectTool\script\windows\white-label-process.ps1 SACRIC-1234`
 | 3 | 產出 Java 與 SQL |
 | 4 | Java 8 編譯檢查 |
 | 5 | 寫入 `src/release_sql/` 並執行 DEV SQL |
-| 6 | git commit |
+| 6 | git commit（只提交本單產出的檔案與 release SQL，不會帶到其他未追蹤檔） |
 | 7-8 | 回 Jira 留言、轉成 DEV DONE |
 
 ## 5. 站台編號 (webSiteValue)

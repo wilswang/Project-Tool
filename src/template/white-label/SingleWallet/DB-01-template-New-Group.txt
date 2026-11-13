@@ -43,8 +43,7 @@ values {$corsDomainValues}
 
 -- API site properties :
 INSERT INTO APISITEPROPERTIES (site, propertiesname, propertiesvalue, updator, updatedate)
-values  ({$webSiteValue}, 'host', '{$apiHost}', 'system', SYSDATE(6)),
-        ({$webSiteValue}, 'securityCode', '{$cert}', 'system', SYSDATE(6));
+values  {$apiSitePropertiesValues};
 
 -- 新增 WICKETSPRO_AM websitegroupmember
 SET

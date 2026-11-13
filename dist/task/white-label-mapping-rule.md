@@ -67,10 +67,15 @@ Based on input JIRA info, follow below JSON Field Mapping rule to create JSON fi
     - `envValues.UAT.apiHost`: The value in the same row as "UAT端點URL", but next column
     - `envValues.SIM.apiHost`: The value in the same row as "SIM端點URL", but next column
     - `envValues.DEV.apiHost`: The value in the same row as "UAT端點URL", but next column
+    - **If the "UAT端點URL" value is 無 / NO / - / empty, OMIT the `apiHost` key for both
+      UAT and DEV.** Do not write "無", do not copy the SIM URL into them. The vendor has no
+      UAT environment, so DEV / UAT must not get a `host` row.
+    - `envValues.SIM.apiHost` is required for SingleWallet; never omit it.
     - Only SingleWallet white labels need `apiHost` (it fills the APISITEPROPERTIES `host`
-      row in `SingleWallet/DB-01-template.txt`). TransferWallet white labels must omit it.
-    - ⚠️ If a SingleWallet ticket omits `apiHost`, the tool aborts with an unresolved-placeholder
-      error and writes nothing — it will not fall back to another site's endpoint.
+      row). TransferWallet white labels must omit it.
+    - The tool emits the `host` row only for environments that have `apiHost`; the
+      `securityCode` row is always emitted. A non-URL `apiHost` (e.g. "無") or a missing
+      SIM `apiHost` makes step 3 fail without writing anything.
 
 ## Support Contact Fields (Regular White Labels Only)
 

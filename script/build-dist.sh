@@ -55,8 +55,11 @@ PY
 JAR_SRC="target/Project-Tool-${VERSION}-jar-with-dependencies.jar"
 
 if [ "${1:-}" = "--package" ]; then
-    echo -e "${BLUE}=== mvn package ===${NC}"
-    mvn -q -DskipTests package
+    # 一定要 clean：IDE（Eclipse / VS Code 的 ECJ）會把編譯失敗的類別也寫進 target/classes，
+    # 內容是一個丟 "Unresolved compilation problems" 的空殼。它的時間戳比原始碼新，
+    # 不 clean 的 mvn package 會直接沿用，打出一個執行到那個類別才爆的 jar（v1.5.8 踩過）
+    echo -e "${BLUE}=== mvn clean package ===${NC}"
+    mvn -q -DskipTests clean package
 fi
 
 # jar 的版本必須與 pom 一致 —— 否則會包到上一版的 jar 而完全沒有徵兆
@@ -152,7 +155,17 @@ if find "$P" -type l | grep -q .; then
     die "staging 裡有 symlink:\n$(find "$P" -type l)"
 fi
 
-echo -e "${GREEN}✅ 無憑證、無產出目錄、無 symlink${NC}"
+# 沒用 --package 時用的是 target/ 裡現成的 jar，可能混有 IDE 編出的錯誤空殼類別
+broken=$(unzip -Z1 "$P/Project-Tool.jar" 'tool/*.class' | while IFS= read -r cls; do
+    if unzip -p "$P/Project-Tool.jar" "$cls" | LC_ALL=C grep -a -q 'Unresolved compilation'; then
+        echo "$cls"
+    fi
+done)
+if [ -n "$broken" ]; then
+    die "jar 裡有編譯失敗的空殼類別（IDE 留在 target/classes 的）。請用 --package 重打：\n$broken"
+fi
+
+echo -e "${GREEN}✅ 無憑證、無產出目錄、無 symlink、無編譯失敗的類別${NC}"
 
 # ---------------------------------------------------------------------------
 # 壓縮

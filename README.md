@@ -767,6 +767,21 @@ cell 內容為 `-` 一律視為無資料，整格跳過。
 
 ## 📝 版本歷史
 
+### v1.5.9 (2026-11-13)
+SACRIC-1455~1461（7 張 SingleWallet 白牌）實際跑下來發現的問題：
+- 🐛 **SingleWallet 的 `APISITEPROPERTIES` 沒有 apiHost 就不產出 host 列** - 需求單「UAT端點URL」寫「無」時，
+  以前只能隨便填值騙過 placeholder 檢查（填過 SIM 端點，也被 LLM 填成字面「無」），錯的 host 會寫進 DB。
+  新增 `ApiSitePropertiesSqlBuilder` 產生 `{$apiSitePropertiesValues}`：沒有 apiHost 只產 securityCode；
+  apiHost 不是網址就報錯；SIM 一定要有 apiHost。mapping rule 同步改成「無」就省略 DEV/UAT 的 apiHost
+- 🐛 **step 6 不再 `git add src/`** - 會把開發者本機未追蹤的檔案一起 commit。step 3 改為寫出
+  `result/manifest/<單號>.files`，step 6 只提交清單內 src/ 底下的檔案與 release SQL
+- 🐛 **插入內容後保留檔尾換行狀態** - `Files.write(path, lines)` 一定補檔尾換行，原本沒有檔尾換行的
+  `Setting.java` 每產一站就多一行 diff。改為維持原檔的換行字元與檔尾狀態
+- ✨ **新增 `--to-step N`（PowerShell：`-ToStep N`）** - 跑到第 N 步就停，例如 `-s 3 --to-step 4`
+  只產出加編譯，不碰 DEV DB、不 commit
+- 🔧 **`build-dist.sh --package` 改為 `mvn clean package`，並檢查 jar 內沒有編譯失敗的空殼類別** -
+  IDE（ECJ）留在 target/classes 的錯誤類別曾被打進 v1.5.8 的第一版 zip
+
 ### v1.5.8 (2026-11-13)
 - 🐛 **SingleWallet `ApiAction.txt` 移除過時的 `placeBet` override** - citixchange `6526dfd524`（2026-09-15）已移除
   Map-based `placeBet` 與各站的空 override，模板沒跟上，產出的 `{$className}ApiAction` 編譯失敗

@@ -31,6 +31,9 @@ public class WhiteLabelTool {
 
 	/** 任一檔案因未解析 placeholder 而失敗，整批視為失敗（讓 shell 的 $? 判斷擋下後續步驟） */
 	private static boolean hasError = false;
+	/** 本次寫過的檔案（建立或插入），step 3 成功後寫成 manifest 給 step 6 只 commit 這些檔 */
+	private static final Set<String> touchedFiles = new LinkedHashSet<>();
+	static final String MANIFEST_DIR = "result/manifest";
 
 	public static void main(String[] args) {
 		if (args.length < 1) {
@@ -51,6 +54,7 @@ public class WhiteLabelTool {
 			// 設定檔格式錯誤在這裡就中止，不會產出任何檔案
 			envValuesResolver = EnvValuesResolver.create(envValuesPath, whiteLabelConfig);
 			requireExplicitEnvValuesForNewGroup(whiteLabelConfig, envValuesPath);
+			requireValidApiHosts(whiteLabelConfig);
 			processDynamicFiles(whiteLabelConfig);
 		} catch (EnvValuesException e) {
 			System.err.println("❌ 環境值設定錯誤: " + e.getMessage());
@@ -64,6 +68,33 @@ public class WhiteLabelTool {
 			System.err.println("❌ 有檔案產生失敗，請檢查上方訊息；本次產出不可視為完成");
 			System.exit(1);
 		}
+
+		try {
+			Path manifest = writeManifest(configFilePath);
+			System.out.println("✅ 產出清單: " + manifest + "（" + touchedFiles.size() + " 個檔案）");
+		} catch (IOException e) {
+			System.err.println("❌ 產出清單寫入失敗: " + e.getMessage());
+			System.exit(1);
+		}
+	}
+
+	/**
+	 * 把本次寫過的檔案寫成 {@code result/manifest/<單號>.files}，一行一個路徑（相對 ProjectTool 目錄）。
+	 *
+	 * <p>step 6 只 commit 這份清單裡 citixchange src/ 底下的檔案，不再 {@code git add src/} ——
+	 * 後者會把開發者本機未追蹤的檔案（例如還沒要進版控的測試）一起 commit 進去。
+	 */
+	static Path writeManifest(String configFilePath) throws IOException {
+		String fileName = Paths.get(configFilePath).getFileName().toString();
+		String ticket = fileName.endsWith(".json") ? fileName.substring(0, fileName.length() - 5) : fileName;
+		Path manifest = Paths.get(MANIFEST_DIR, ticket + ".files");
+		Files.createDirectories(manifest.getParent());
+		StringBuilder content = new StringBuilder();
+		for (String path : touchedFiles) {
+			content.append(path).append('\n');
+		}
+		Files.write(manifest, content.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+		return manifest;
 	}
 
 	/**
@@ -71,6 +102,39 @@ public class WhiteLabelTool {
 	 * 這三者沒有內建 fallback，缺了會產出「看起來合法但錯的」SQL 且不留任何 {$token} 痕跡。
 	 * 所以這裡要求每個環境都有明確條目，並在產出任何檔案之前中止。
 	 */
+	/**
+	 * SingleWallet 各環境的 apiHost 在產出任何檔案之前先驗一次。
+	 *
+	 * <p>{@link ApiSitePropertiesSqlBuilder} 本身也會丟錯，但那是在逐檔產出途中 ——
+	 * 先跑到的 Java 檔已經寫出去了，step 3 失敗卻留下一半的產出。這裡提前檢查，錯就一個檔都不寫。
+	 */
+	private static void requireValidApiHosts(WhiteLabelConfig config) throws EnvValuesException {
+		if (!isSingleWallet(config)) {
+			return;
+		}
+		Set<String> envNames = new LinkedHashSet<>();
+		for (FileConfig fc : config.getFiles()) {
+			if (fc.getEnvironments() != null) {
+				envNames.addAll(fc.getEnvironments());
+			}
+		}
+		for (String envName : envNames) {
+			String apiHost;
+			try {
+				apiHost = envValuesResolver.resolve(envName).get(ApiSitePropertiesSqlBuilder.API_HOST);
+			} catch (UnknownEnvironmentException e) {
+				// 環境名打錯由 processNewFilePerEnv 統一回報
+				continue;
+			}
+			try {
+				ApiSitePropertiesSqlBuilder.build(envName, apiHost, config.getWebSiteValue(),
+					config.getApiWalletInfo().getCert());
+			} catch (IllegalStateException e) {
+				throw new EnvValuesException(e.getMessage() + "\n   本次未產出任何檔案。");
+			}
+		}
+	}
+
 	private static void requireExplicitEnvValuesForNewGroup(WhiteLabelConfig config, String envValuesPath)
 			throws EnvValuesException {
 		if (config.getApiWalletInfo() == null || !config.getApiWalletInfo().isNewGroup()) {
@@ -102,6 +166,7 @@ public class WhiteLabelTool {
 		envReplacementsCache.clear();
 		envValuesResolver = null;
 		hasError = false;
+		touchedFiles.clear();
 	}
 
 	private static Map<String, String> buildReplacements(WhiteLabelConfig whiteLabelConfig) {
@@ -201,6 +266,13 @@ public class WhiteLabelTool {
 					replacements.putAll(NewGroupSqlBuilder.build(config, envValues));
 				}
 
+				// 6. SingleWallet 的 APISITEPROPERTIES：該環境沒有 apiHost 就不產出 host 列
+				if (isSingleWallet(config)) {
+					replacements.put("{$apiSitePropertiesValues}", ApiSitePropertiesSqlBuilder.build(envName,
+						envValues.get(ApiSitePropertiesSqlBuilder.API_HOST), config.getWebSiteValue(),
+						config.getApiWalletInfo().getCert()));
+				}
+
 				String resolvedTemplate = TemplateEngine.fill(fc.getTemplate(), replacements);
 				String resolvedName = TemplateEngine.fill(fc.getName(), replacements);
 				PlaceholderValidator.requireFullyResolved("template 路徑 (" + fc.getTemplate() + ")", resolvedTemplate);
@@ -210,12 +282,13 @@ public class WhiteLabelTool {
 				Files.createDirectories(Paths.get(location));
 				String outputPath = location + resolvedName;
 
-				// 6. 先填值、驗證通過才寫檔，避免把 {$typo} 寫進 .sql
+				// 7. 先填值、驗證通過才寫檔，避免把 {$typo} 寫進 .sql
 				String content = TemplateEngine.fillFile(resolvedTemplate, replacements);
 				requireNonBlankContent(resolvedTemplate, outputPath, content);
 				PlaceholderValidator.requireFullyResolved(outputPath, content);
 
 				TemplateEngine.writeToFile(outputPath, content);
+				touchedFiles.add(outputPath);
 				System.out.println("✅ Created (" + envName + "): " + outputPath);
 			} catch (UnresolvedPlaceholderException e) {
 				hasError = true;
@@ -229,6 +302,11 @@ public class WhiteLabelTool {
 				System.err.println("❌ Error processing env " + envName + " for '" + fc.getName() + "': " + e.getMessage());
 			}
 		}
+	}
+
+	private static boolean isSingleWallet(WhiteLabelConfig config) {
+		return config.isApiWhiteLabel() && config.getApiWalletInfo() != null
+			&& "Single".equals(config.getAdditionalProperties().get("apiWalletType"));
 	}
 
 	/**
@@ -268,6 +346,7 @@ public class WhiteLabelTool {
 		PlaceholderValidator.requireFullyResolved(outputPath, content);
 
 		TemplateEngine.writeToFile(outputPath, content);
+		touchedFiles.add(outputPath);
 		System.out.println("✅ Created: " + outputPath);
 	}
 
@@ -280,6 +359,7 @@ public class WhiteLabelTool {
 		String marker = StringUtils.isNotBlank(fc.getMarker()) ? fc.getMarker() : "// insert New White Label";
 		Path target = Paths.get(fc.getLocation());
 		insertAtMarker(target, marker, content, fc.isInsertAfter());
+		touchedFiles.add(fc.getLocation());
 		if (fc.getImports() != null) {
 			for (String imp : fc.getImports()) {
 				String resolvedImport = TemplateEngine.fill(imp, replacements);
@@ -356,7 +436,7 @@ public class WhiteLabelTool {
 		}
 
 		String fileName = javaFile.getFileName().toString();
-		Files.write(javaFile, result);
+		writeLinesKeepingFileEnding(javaFile, result);
 		System.out.println("✅ Import successfully inserted to " + fileName + ": " + normalizedImport);
 	}
 
@@ -441,8 +521,26 @@ public class WhiteLabelTool {
 		}
 
 		String fileName = javaFile.toString().substring(javaFile.toString().lastIndexOf('/') + 1);
-		Files.write(javaFile, result);
+		writeLinesKeepingFileEnding(javaFile, result);
 		System.out.println("✅ Content successfully written to " + fileName);
+	}
+
+	/**
+	 * 把逐行處理後的內容寫回檔案，並維持原檔的換行字元與「檔尾有沒有換行」。
+	 *
+	 * <p>{@code Files.write(path, lines)} 會在每一行（包含最後一行）後面補上系統換行，
+	 * 原本檔尾沒有換行的檔案（例如 citixchange 的 Setting.java）每產一個站就會多出一行 diff。
+	 */
+	static void writeLinesKeepingFileEnding(Path file, List<String> lines) throws IOException {
+		String original = new String(Files.readAllBytes(file), java.nio.charset.StandardCharsets.UTF_8);
+		String lineSeparator = original.contains("\r\n") ? "\r\n" : "\n";
+		boolean endsWithNewline = original.isEmpty() || original.endsWith("\n");
+
+		String content = String.join(lineSeparator, lines);
+		if (endsWithNewline && !lines.isEmpty()) {
+			content = content + lineSeparator;
+		}
+		Files.write(file, content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
 	}
 
 	private static String getIndent(String line) {

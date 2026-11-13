@@ -118,4 +118,21 @@ public class InsertAtMarkerTest {
 		WhiteLabelTool.insertAtMarker(target, MARKER, "FOO(1),", false);
 		assertTrue(read(target).contains("\tFOO(1),\n\t" + MARKER + " SINGLE_WALLET"));
 	}
+
+	// 原檔檔尾沒有換行 → 插入後也不能多出一個（citixchange 的 Setting.java 就是這樣）
+	@Test
+	public void testKeepsMissingTrailingNewline() throws Exception {
+		Path target = javaFile("class T {\n\t" + MARKER + "\n}");
+		WhiteLabelTool.insertAtMarker(target, MARKER, "FOO(1),", false);
+		assertEquals("class T {\n\tFOO(1),\n\t" + MARKER + "\n}", read(target));
+	}
+
+	// 原檔是 CRLF → 插入後整份維持 CRLF，不混用
+	@Test
+	public void testKeepsCrlfLineSeparator() throws Exception {
+		Path target = javaFile("class T {\r\n\t" + MARKER + "\r\n}\r\n");
+		WhiteLabelTool.insertAtMarker(target, MARKER, "FOO(1),", false);
+		assertEquals("class T {\r\n\tFOO(1),\r\n\t" + MARKER + "\r\n}\r\n", read(target));
+	}
+
 }

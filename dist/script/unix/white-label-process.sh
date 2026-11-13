@@ -48,6 +48,7 @@ TEST_MODE=false
 QUIET_MODE=false
 TICKET_NO=""
 FROM_STEP=1
+TO_STEP=8
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -72,6 +73,14 @@ while [[ $# -gt 0 ]]; do
             FROM_STEP="${1#*=}"
             shift
             ;;
+        --to-step)
+            TO_STEP="$2"
+            shift 2
+            ;;
+        --to-step=*)
+            TO_STEP="${1#*=}"
+            shift
+            ;;
         SACRIC-*)
             TICKET_NO="$1"
             shift
@@ -83,12 +92,14 @@ while [[ $# -gt 0 ]]; do
             echo "  -c, --customized  Customized mode (skip steps 5-8)"
             echo "  -t, --testMode    Test mode (skip actual Jira updates)"
             echo "  -s, --from-step N Start from step N (1-8)"
+            echo "  --to-step N       Stop after step N (1-8), e.g. -s 3 --to-step 4 = generate + compile only"
             echo "  --quiet           Suppress verbose output"
             echo ""
             echo "Examples:"
             echo "  $0 SACRIC-1020"
             echo "  $0 SACRIC-1020 -c"
             echo "  $0 SACRIC-1020 -s 3      # Start from step 3"
+            echo "  $0 SACRIC-1020 --to-step 4   # Steps 1-4 only: no DEV SQL, no commit, no Jira"
             echo "  $0 SACRIC-1020 -t --quiet"
             exit 1
             ;;
@@ -112,6 +123,12 @@ fi
 # Validate FROM_STEP
 if [[ ! $FROM_STEP =~ ^[1-8]$ ]]; then
     echo -e "${RED}Error: --from-step must be between 1 and 8${NC}"
+    exit 1
+fi
+
+# Validate TO_STEP
+if [[ ! $TO_STEP =~ ^[1-8]$ ]] || [ "$TO_STEP" -lt "$FROM_STEP" ]; then
+    echo -e "${RED}Error: --to-step must be between ${FROM_STEP} and 8${NC}"
     exit 1
 fi
 
@@ -1113,20 +1130,55 @@ execute_step_6() {
     echo_verbose "Commit message: $commit_msg"
 
     # Stage files
-    # 只 stage src/：ProjectTool 已不在 citixchange 的版控內（由 zip 提供），
-    # 把它留在 pathspec 裡會讓 git add 回非零，而下面檢查的是 git commit 的退出碼，
-    # 於是失敗會被靜靜吞掉
-    if [ "$QUIET_MODE" = true ]; then
-        git add src/ > /dev/null 2>&1
-    else
-        git add src/
+    # 只 commit 本單的產出：step 3 寫的 manifest（src/ 底下的部分）＋ step 5 追加的 release SQL。
+    # 以前是 git add src/，會把開發者本機未追蹤的檔案（例如還沒要進版控的測試）一起 commit
+    local manifest="$TOOL_DIR/result/manifest/${TICKET_NO}.files"
+    if [ ! -f "$manifest" ]; then
+        log_step 6 "❌ Failed (missing manifest)"
+        echo_critical "${RED}❌ Step 6 Failed: 找不到 step 3 的產出清單 ${manifest}${NC}"
+        echo_critical "${RED}   請先重跑 -s 3 產生清單，或手動 commit${NC}"
+        return 1
     fi
 
-    # Commit
+    local commit_paths=()
+    local path
+    while IFS= read -r path; do
+        # manifest 的路徑相對 ProjectTool；citixchange 的檔案是 ../src/...，result/ 底下的不進版控
+        case "$path" in
+            ../src/*) commit_paths+=("${path#../}") ;;
+        esac
+    done < "$manifest"
+
+    local fix_version=$(read_json_field "fixVersion")
+    local sql_file
+    for sql_file in "src/release_sql/${fix_version}/MyDB01.sql" "src/release_sql/${fix_version}/MyDB41.sql"; do
+        if [ -f "$sql_file" ]; then
+            commit_paths+=("$sql_file")
+        fi
+    done
+
+    if [ ${#commit_paths[@]} -eq 0 ]; then
+        log_step 6 "❌ Failed (nothing to commit)"
+        echo_critical "${RED}❌ Step 6 Failed: 產出清單裡沒有 src/ 底下的檔案${NC}"
+        return 1
+    fi
+
+    echo_verbose "Files to commit:"
+    for path in "${commit_paths[@]}"; do
+        echo_verbose "  - $path"
+    done
+
+    if ! git add -- "${commit_paths[@]}"; then
+        log_step 6 "❌ Failed (git add)"
+        echo_critical "${RED}❌ Step 6 Failed: git add failed${NC}"
+        return 1
+    fi
+
+    # Commit：帶 pathspec，只提交這些檔案，不會帶到開發者先前另外 stage 的東西
     if [ "$QUIET_MODE" = true ]; then
-        git commit -m "$commit_msg" > /dev/null 2>&1
+        git commit -m "$commit_msg" -- "${commit_paths[@]}" > /dev/null 2>&1
     else
-        git commit -m "$commit_msg"
+        git commit -m "$commit_msg" -- "${commit_paths[@]}"
     fi
 
     if [ $? -eq 0 ]; then
@@ -1303,6 +1355,11 @@ display_completion_summary() {
 # Main Execution Flow
 # =============================================================================
 
+# step N 是否落在 --from-step 與 --to-step 之間
+should_run_step() {
+    [ "$FROM_STEP" -le "$1" ] && [ "$TO_STEP" -ge "$1" ]
+}
+
 main() {
     local overall_status=0
 
@@ -1318,6 +1375,7 @@ main() {
     echo_verbose "  - CUSTOMIZED_MODE: $CUSTOMIZED_MODE"
     echo_verbose "  - QUIET_MODE: $QUIET_MODE"
     echo_verbose "  - FROM_STEP: $FROM_STEP"
+    echo_verbose "  - TO_STEP: $TO_STEP"
     echo_verbose ""
     echo_verbose "Directories:"
     echo_verbose "  - SCRIPT_DIR: $SCRIPT_DIR"
@@ -1342,44 +1400,48 @@ main() {
     if [ "$FROM_STEP" -gt 1 ]; then
         echo_critical "${YELLOW}⚠️  Starting from step ${FROM_STEP} (skipping steps 1-$((FROM_STEP-1)))${NC}"
     fi
+    if [ "$TO_STEP" -lt 8 ]; then
+        echo_critical "${YELLOW}⚠️  Stopping after step ${TO_STEP} (skipping steps $((TO_STEP+1))-8)${NC}"
+    fi
 
     # CRITICAL STEPS (fail fast)
-    if [ "$FROM_STEP" -le 1 ]; then
+    if should_run_step 1; then
         execute_step_1 || exit 1
     fi
-    if [ "$FROM_STEP" -le 2 ]; then
+    if should_run_step 2; then
         execute_step_2 || exit 1
     fi
-    # 用 -le 3 而非 -le 2：-s 3 重跑也要重新確認 groupInfo 已填
-    if [ "$FROM_STEP" -le 3 ]; then
+    # 2.5 是 step 2 產出 JSON 的補完，也是 step 3 的前置：
+    # -s 3 重跑要重新確認 groupInfo（已有值的欄位不會被覆寫），--to-step 2 也要拿到完整 JSON
+    if [ "$FROM_STEP" -le 3 ] && [ "$TO_STEP" -ge 2 ]; then
         execute_step_2_5 || exit 1
     fi
-    if [ "$FROM_STEP" -le 3 ]; then
+    if should_run_step 3; then
         execute_step_3 || exit 1
     fi
 
     # PARTIAL FAILURE OK
-    if [ "$FROM_STEP" -le 4 ]; then
+    if should_run_step 4; then
         execute_step_4 || echo_verbose "${YELLOW}⚠️  Step 4 failed (continuing)${NC}"
     fi
 
     # OPTIONAL (exit on critical failure, skip if customized)
-    if [ "$FROM_STEP" -le 5 ]; then
+    if should_run_step 5; then
         execute_step_5 || exit 1
     fi
 
     # Update log file BEFORE git commit so it gets included
     update_final_log
 
-    if [ "$FROM_STEP" -le 6 ]; then
+    if should_run_step 6; then
         execute_step_6 || exit 1
     fi
 
     # JIRA UPDATES (non-fatal, skip if customized)
-    if [ "$FROM_STEP" -le 7 ]; then
+    if should_run_step 7; then
         execute_step_7 || overall_status=1
     fi
-    if [ "$FROM_STEP" -le 8 ]; then
+    if should_run_step 8; then
         execute_step_8 || overall_status=1
     fi
 
