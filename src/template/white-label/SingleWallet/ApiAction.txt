@@ -1,13 +1,10 @@
 package com.nv.apiWallet.apiaction.single;
 
-import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import com.nv.commons.code.WebSiteType;
-import com.nv.commons.dto.Account;
 
 public class {$className}ApiAction extends SingleWalletApiAction {
 
@@ -29,13 +26,4 @@ public class {$className}ApiAction extends SingleWalletApiAction {
 		return 32;
 	}
 
-	@Override
-	public void placeBet(Map<String, Object> dataMap, Map<String, Object> elkDataMap, Account account, BigDecimal totalExposure, long totalExposureTs)
-		throws Exception {
-		//先移除應該用不到
-//		dataMap.put("promotionId", account.getExtension1());
-//		dataMap.put("clientPromoId", account.getExtension2());
-		super.placeBet(dataMap, elkDataMap, account, totalExposure, totalExposureTs);
-	}
-	
 }

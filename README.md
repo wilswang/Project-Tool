@@ -767,6 +767,11 @@ cell 內容為 `-` 一律視為無資料，整格跳過。
 
 ## 📝 版本歷史
 
+### v1.5.8 (2026-11-13)
+- 🐛 **SingleWallet `ApiAction.txt` 移除過時的 `placeBet` override** - citixchange `6526dfd524`（2026-09-15）已移除
+  Map-based `placeBet` 與各站的空 override，模板沒跟上，產出的 `{$className}ApiAction` 編譯失敗
+  （SACRIC-1455 step 4 踩到）。模板改成與既有站（如 `RoyalbetApiAction`）一致，並移除用不到的 import
+
 ### v1.5.7 (2026-10-27)
 - 🔧 **SingleWallet 的 `offerGameProduct` 對齊實際上線值** - 模板產出的值一直要在 citixchange 端手動修，
   修完沒回寫模板，下一張單又會產出舊值
