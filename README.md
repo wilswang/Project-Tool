@@ -767,6 +767,12 @@ cell 內容為 `-` 一律視為無資料，整格跳過。
 
 ## 📝 版本歷史
 
+### v1.5.10 (2026-11-19)
+- 🐛 **`domaingroup.issinglegroup` 依群組開頭決定，不再寫死 1** - 只有 A 群組是 single group（1），B、C 群組都是 0。
+  以前三個新群組模板（ApiWallet / SingleWallet 的 `DB-01-template-New-Group.txt`、RacingOnly 的 `DB-01-template.txt`）
+  一律寫 1，線上 C07~C10 因此被寫成 single group。改由 `NewGroupSqlBuilder` 產生 `{$isSingleGroup}`；
+  未知開頭（含小寫、空值）預設 0 並印出顯眼警告，要人工確認
+
 ### v1.5.9 (2026-11-13)
 SACRIC-1455~1461（7 張 SingleWallet 白牌）實際跑下來發現的問題：
 - 🐛 **SingleWallet 的 `APISITEPROPERTIES` 沒有 apiHost 就不產出 host 列** - 需求單「UAT端點URL」寫「無」時，

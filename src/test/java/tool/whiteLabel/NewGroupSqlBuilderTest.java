@@ -255,4 +255,33 @@ public class NewGroupSqlBuilderTest {
 		assertEquals("ga-id", result.get("{$wwwgaIpSetId}"));
 		assertEquals("cf-id", result.get("{$wwwcfIpSetId}"));
 	}
+
+	/** 只有 A 群組是 single group */
+	@Test
+	public void testIsSingleGroupForGroupA() {
+		assertEquals("1", NewGroupSqlBuilder.resolveIsSingleGroup("A72"));
+	}
+
+	/** B、C 群組都不是 single group（線上 C07~C10 曾被模板寫死的 1 寫錯） */
+	@Test
+	public void testIsNotSingleGroupForGroupBAndC() {
+		assertEquals("0", NewGroupSqlBuilder.resolveIsSingleGroup("B05"));
+		assertEquals("0", NewGroupSqlBuilder.resolveIsSingleGroup("C10"));
+	}
+
+	/** 未知開頭（含小寫、空值、null）預設 0，只印警告不中止 */
+	@Test
+	public void testUnknownGroupPrefixDefaultsToNotSingleGroup() {
+		assertEquals("0", NewGroupSqlBuilder.resolveIsSingleGroup("D01"));
+		assertEquals("0", NewGroupSqlBuilder.resolveIsSingleGroup("a72"));
+		assertEquals("0", NewGroupSqlBuilder.resolveIsSingleGroup(""));
+		assertEquals("0", NewGroupSqlBuilder.resolveIsSingleGroup(null));
+	}
+
+	/** build() 會把 {$isSingleGroup} 放進替換表（測資群組 A58） */
+	@Test
+	public void testBuildPutsIsSingleGroup() {
+		Map<String, String> result = NewGroupSqlBuilder.build(buildConfig(), plainEnv("DEV", "devnginx", "dev9wapi"));
+		assertEquals("1", result.get("{$isSingleGroup}"));
+	}
 }

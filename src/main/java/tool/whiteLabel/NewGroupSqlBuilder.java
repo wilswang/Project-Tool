@@ -55,6 +55,31 @@ public final class NewGroupSqlBuilder {
 		return bkIpSetId;
 	}
 
+	/**
+	 * domaingroup.issinglegroup 依群組名稱的開頭決定：只有 A 群組是 single group（1），
+	 * B、C 群組都不是（0）。
+	 *
+	 * <p>以前模板寫死 1，B/C 群組會被寫成 single group —— 線上 C07~C10 就是這樣被寫錯的，
+	 * 結果多站台共用 domain 卻被當成單一站台判斷（未登入時會被判成其中一個站台）。
+	 *
+	 * <p>其他開頭（包括空值、小寫）預設 0，但會印出顯眼的警告，要人工確認。
+	 */
+	static String resolveIsSingleGroup(String group) {
+		if (group != null && group.startsWith("A")) {
+			return "1";
+		}
+		if (group != null && (group.startsWith("B") || group.startsWith("C"))) {
+			return "0";
+		}
+		System.err.println();
+		System.err.println("⚠️⚠️⚠️ ==================================================================");
+		System.err.println("⚠️  群組 \"" + group + "\" 的開頭不是 A / B / C，issinglegroup 預設為 0（非 single group）");
+		System.err.println("⚠️  規則：只有 A 群組是 single group；請人工確認 domaingroup SQL 的 issinglegroup 是否正確");
+		System.err.println("⚠️⚠️⚠️ ==================================================================");
+		System.err.println();
+		return "0";
+	}
+
 	public static Map<String, String> build(WhiteLabelConfig whiteLabelConfig, EnvValues envValues) {
 		ApiWalletInfo apiWalletInfo = whiteLabelConfig.getApiWalletInfo();
 		GroupInfo groupInfo = apiWalletInfo.getGroupInfo();
@@ -71,6 +96,7 @@ public final class NewGroupSqlBuilder {
 		replacements.put("{$wwwgaIpSetId}", bkIpSetId.get(0));
 		replacements.put("{$wwwcfIpSetId}", bkIpSetId.get(1));
 		replacements.put("{$apiInfoBkIpSetId}", groupInfo.getApiInfoBkIpSetId());
+		replacements.put("{$isSingleGroup}", resolveIsSingleGroup(apiWalletInfo.getGroup()));
 
 		String subDomainStatic = envValues.getSubDomainStatic();
 		String subDomainApi = envValues.getSubDomainApi();

@@ -30,7 +30,7 @@ UPDATE systemsetting SET updatedate = SYSDATE(6), jsonvalue = JSON_MERGE(jsonval
 -- API 2.0 Group : (新建)
 INSERT INTO domaingroup
 (groupname, privateipsetid, wwwgaipsetid, wwwcfipsetid, apiinfoipsetid, groupsite, updator, updatedate, issinglegroup)
-VALUES('{$group}', '{$privateIpSetId}', '{$wwwgaIpSetId}', '{$wwwcfIpSetId}', '{$apiInfoBkIpSetId}', '["{$webSiteValue}"]', 'system', SYSDATE(6), 1);
+VALUES('{$group}', '{$privateIpSetId}', '{$wwwgaIpSetId}', '{$wwwcfIpSetId}', '{$apiInfoBkIpSetId}', '["{$webSiteValue}"]', 'system', SYSDATE(6), {$isSingleGroup});
 
 -- Add API domain name
 INSERT INTO apidomainname
